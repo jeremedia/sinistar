@@ -90,7 +90,7 @@
 
 ;===============================================================================
 
-        INCLUDE MODS.ASM        ; Mods are now located here to make "MAKE.ASM"
+        INCLUDE mods.asm        ; Mods are now located here to make "MAKE.ASM"
                                 ; less messy.  Edit this file to enable unused
                                 ; content like debug features and new mods!
 

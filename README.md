@@ -96,7 +96,7 @@ For the first time ever, the source code for the sound and speech ROMs are inclu
 
   I wasn't sure how to fix this for the longest time and I've been pushing it off until today.  I'm forever grateful to the devs of Notepad++ because I was able to quickly go through the entire codebase and convert all the tabs into spaces using that text editor's powerful macro playback features.  Before doing all of this, I confirmed in a separate test branch that the tab conversion indeed fixed the issue.  All extra trailing spaces have been removed as well.  The codebase is so much nicer to look at now and can be compared side-to-side with the original codebase from historicalsource!
 
-  Another thing that I changed was moving all the debug and mod options into a brand new file called, `mods.ASM`.  This reduces a lot of clutter in `MAKE.ASM`.
+  Another thing that I changed was moving all the debug and mod options into a brand new file called, `mods.asm`.  This reduces a lot of clutter in `MAKE.ASM`.
 
 * 06/21/2024 - I have a surprise announcement!  Sinistar's early "prototype" AMOA build from November 1982 is now rebuildable from the source code!  In order to do this, I created a new repository and uploaded the AMOA edits there.  This was done to keep the current codebase from getting too messy as there were a lot of edits that had to be made; it took ten days to get the ROMs to match up!  With this code, we can finally start to completely understand what exactly changed between versions, other than the obvious missing stuff like the Sinistar biting the player ship.  You can view the code here: https://github.com/synamaxmusic/sinistar-amoa
 
@@ -750,7 +750,7 @@ The very first files to be processed through the assembler are routines related 
 
 ## Debug Options
   
-A lot of debug code is buried inside the original codebase so ```mods.ASM``` has new defines to enable these again for those that are interested.  Use ```DisableKenChk``` if you are not building the last ROM (diagnostic ROM 11), otherwise use ```FakeChecksums```.
+A lot of debug code is buried inside the original codebase so ```mods.asm``` has new defines to enable these again for those that are interested.  Use ```DisableKenChk``` if you are not building the last ROM (diagnostic ROM 11), otherwise use ```FakeChecksums```.
 
 ### PROMS
 
@@ -822,7 +822,7 @@ This new define enables a previously-unknown sprite edit of the tiny Planetoid i
 
 ## Mods
 
-Several new mods have been added for Sinistar!  To enable a mod, open up ```mods.ASM``` and simply remove the semi-colon in front of the define for that mod.  Then, save the file and build the game per the [build instructions](#build-instructions).  Be sure to read the instructions next to the defines for further information.
+Several new mods have been added for Sinistar!  To enable a mod, open up ```mods.asm``` and simply remove the semi-colon in front of the define for that mod.  Then, save the file and build the game per the [build instructions](#build-instructions).  Be sure to read the instructions next to the defines for further information.
 
 Use "DisableTests" below to make mods possible in Sinistar.  Several of the following mods can be combined together (see MOD COMBOS below).
 
