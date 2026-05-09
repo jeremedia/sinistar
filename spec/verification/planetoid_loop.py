@@ -7,10 +7,18 @@ Constants used (all from tunables.yaml#planetoid):
   vibration_max               (RchMax)   = 96
   vibration_damp_per_frame    (VibDamp)  = 2
   missile_vibration_add       (MisVib)   = 16
-  crystal_toss_probability    (CryProb)  = 16/255 ≈ 0.0627 per frame
+  crystal_toss_threshold      (CrProb)   = 16  (THRESHOLD, not probability)
   crystal_toss_damping        (CryDamp)  = 10  (not directly modeled here)
 
-Plus tunables.yaml#sinibomb#max_in_bay (informational).
+Verified mechanic (FALS/N1ALL.ASM:402-457 TOSCRYS):
+  excess = vibration - crystal_toss_threshold
+  if excess > 0 and rand_byte() <= excess:
+      toss crystal
+      vibration /= 2          # toss halves vibration
+
+Earlier drafts modeled toss as a flat 16/255 chance per frame; that
+was wrong. The correct mechanic is threshold-then-proportional, which
+gives planetoids a meaningful "tipping point" feel.
 
 Simulates: an idle planetoid hit by missiles every 30 frames. Tracks
 vibration, crystal tosses, and the shatter event.
@@ -42,7 +50,7 @@ def simulate(seed=42, missile_interval=30, missile_count=8, max_frames=400):
     rch_max = t[("planetoid", "vibration_max")]
     damp = t[("planetoid", "vibration_damp_per_frame")]
     mis_vib = t[("planetoid", "missile_vibration_add")]
-    cry_prob = t[("planetoid", "crystal_toss_probability")]  # 0.063
+    cry_threshold = t[("planetoid", "crystal_toss_threshold")]
 
     random.seed(seed)
     vibration = 0
@@ -52,7 +60,8 @@ def simulate(seed=42, missile_interval=30, missile_count=8, max_frames=400):
     next_missile_frame = 0
 
     print(f"Planetoid simulation (seed={seed})")
-    print(f"  RchMax={rch_max}, VibDamp={damp}, MisVib={mis_vib}, CryProb={cry_prob:.3f}/frame")
+    print(f"  RchMax={rch_max}, VibDamp={damp}, MisVib={mis_vib}, "
+          f"CrProb_threshold={cry_threshold}")
     print(f"  Firing {missile_count} missiles, one every {missile_interval} frames")
     print()
     print(f"  frame  vib  events")
@@ -71,10 +80,14 @@ def simulate(seed=42, missile_interval=30, missile_count=8, max_frames=400):
         # Damping
         vibration = max(0, vibration - damp)
 
-        # Crystal toss roll while vibrating
-        if vibration > 0 and random.random() < cry_prob:
+        # Crystal toss: threshold-then-proportional (FALS/N1ALL.ASM:410-416).
+        # excess = vibration - crystal_toss_threshold
+        # if excess > 0 and rand_byte() <= excess: toss + halve vibration
+        excess = vibration - cry_threshold
+        if excess > 0 and random.randint(0, 255) <= excess:
             crystals_tossed += 1
-            events.append(f"crystal tossed (#{crystals_tossed})")
+            vibration //= 2  # halved on successful toss
+            events.append(f"crystal tossed (#{crystals_tossed}) — vib halved")
 
         # Shatter check
         if vibration >= rch_max and not shattered:
@@ -97,11 +110,18 @@ def main():
     print("Planetoid vibration / crystal toss / shatter loop")
     print("=" * 50)
     print()
+    print("--- Slow fire (every 30 frames): below threshold, no tosses ---")
+    print("    Demonstrates threshold-gated mechanic: vibration damps faster")
+    print("    than slow fire can build it past CrProb=16.")
     simulate(seed=42, missile_interval=30, missile_count=8)
     print()
-    # Lighter attack — should not shatter, may still toss crystals
-    print("--- Lighter attack: 3 missiles, spaced 60 frames ---")
+    print("--- Light attack (3 missiles, spaced 60 frames) ---")
     simulate(seed=42, missile_interval=60, missile_count=3, max_frames=300)
+    print()
+    print("--- Rapid fire (every 6 frames): crosses threshold, cascades crystals ---")
+    print("    Demonstrates that sustained fire builds vibration past")
+    print("    threshold, producing the 'tipping point' that yields crystals.")
+    simulate(seed=42, missile_interval=6, missile_count=10, max_frames=200)
 
 
 if __name__ == "__main__":

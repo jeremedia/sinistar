@@ -73,9 +73,10 @@ distances. Lower = closer orbit. See warrior / worker / Sinistar tunables.
 1. **Sinistar piece** — a skull fragment carried by workers during
    assembly. Also the score-able entity if the player shoots one
    in transit.
-2. **Sinistar HP** — `tunables.yaml#pieces_required = 4`, the number of
-   sinibomb hits to kill a fully-assembled Sinistar. The original code
-   uses "piece" for both.
+2. **Sinistar HP** — `tunables.yaml#pieces_required = 12`, the number of
+   sinibomb hits to kill a fully-assembled Sinistar (verified
+   `WITT/SUBPART.ASM` + `SAM/SAMTABLE.ASM` PIECETB → ALIVE). The
+   original code uses "piece" for both.
 
 **Plan** — A warrior's tactical mission within a squadron. Plans select
 which speed table the warrior uses. See `05-ai.md`.

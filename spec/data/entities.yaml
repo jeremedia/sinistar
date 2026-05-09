@@ -39,7 +39,7 @@ entities:
     scan_footprint: [1, 1]
     approx_pixel_size: [16, 16]
     hp_or_pieces: n/a
-    score_value: 500
+    score_value: 000
     description: Individual skull piece carried by workers to assemble Sinistar. Player score for shooting one before delivery.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(piece)
@@ -79,7 +79,7 @@ entities:
     scan_footprint: [2, 2]
     approx_pixel_size: [17, 8]
     hp_or_pieces: n/a
-    score_value: 500
+    score_value: 000
     description: Aggressive enemy that flies in formations and fires aimed shots at the player.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(warrior)
@@ -147,7 +147,7 @@ entities:
     scan_footprint: [3, 3]
     approx_pixel_size: [26, 14]
     hp_or_pieces: n/a
-    score_value: 5
+    score_value: 0
     description: Large drifting rock. Vibrates when hit and ejects crystals; shatters into fragments at peak vibration.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(planetoid_1)
@@ -159,7 +159,7 @@ entities:
     scan_footprint: [3, 3]
     approx_pixel_size: [24, 13]
     hp_or_pieces: n/a
-    score_value: 5
+    score_value: 0
     description: Medium planetoid; same vibration behavior as type 1 with smaller mass.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(planetoid_2)
@@ -171,7 +171,7 @@ entities:
     scan_footprint: [2, 2]
     approx_pixel_size: [18, 10]
     hp_or_pieces: n/a
-    score_value: 5
+    score_value: 0
     description: Small planetoid; shatters more readily, fewer crystals.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(planetoid_3)
@@ -183,7 +183,7 @@ entities:
     scan_footprint: [3, 3]
     approx_pixel_size: [27, 12]
     hp_or_pieces: n/a
-    score_value: 5
+    score_value: 0
     description: Variant medium planetoid (alternate art).
     source:
       - SAM/SAMTABLE.ASM:PIECETB(planetoid_4)
@@ -195,7 +195,7 @@ entities:
     scan_footprint: [3, 4]
     approx_pixel_size: [28, 16]
     hp_or_pieces: n/a
-    score_value: 5
+    score_value: 0
     description: Largest planetoid. High mass; slower, harder to push, yields the most crystals before shattering.
     source:
       - SAM/SAMTABLE.ASM:PIECETB(planetoid_5)

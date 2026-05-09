@@ -268,11 +268,27 @@ tunables:
       description: Vibration added per sinibomb impact (MisVib).
       source: FALS/N1SYM.ASM:MisVib
 
-    - name: crystal_toss_probability
-      value: 0.063
-      unit: probability_per_frame
-      description: Per-frame chance to eject a crystal while vibrating (CryProb = 16/255).
-      source: FALS/N1SYM.ASM:CryProb
+    - name: crystal_toss_threshold
+      value: 16
+      unit: richter_units
+      description: |
+        CrProb is a *threshold*, not a flat probability. Per-frame logic
+        (FALS/N1ALL.ASM:402-457): take excess = vibration - CrProb. If
+        excess <= 0, no toss. Else roll an 8-bit random and toss only if
+        random <= excess. Toss probability is therefore proportional to
+        the excess vibration: ~0% near threshold, ~31% at vibration_max=96
+        (excess=80), 0% below threshold. After a toss, vibration is HALVED
+        (`lsra` at line 455) — so a toss is self-limiting.
+      source: FALS/N1ALL.ASM:402-457 (TOSCRYS routine), FALS/N1SYM.ASM:CryProb
+      confidence: high
+      replaces: crystal_toss_probability (older flat-probability incorrect interpretation)
+
+    - name: crystal_toss_vibration_decay
+      value: 2
+      unit: division
+      description: After a successful crystal toss, planetoid vibration is halved (lsra).
+      source: FALS/N1ALL.ASM:454-456
+      confidence: high
 
     - name: crystal_toss_damping
       value: 10

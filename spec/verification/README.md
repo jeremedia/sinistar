@@ -39,6 +39,16 @@ constant, an undocumented branch), that's a spec gap to fix.
 
 ## Running
 
+The only dependency is PyYAML. Install it once:
+
+```sh
+pip install -r spec/verification/requirements.txt
+# or simply:
+pip install pyyaml
+```
+
+Then run the scripts from the spec/ directory:
+
 ```sh
 cd spec
 python3 verification/coverage_check.py
@@ -47,4 +57,4 @@ python3 verification/planetoid_loop.py
 python3 verification/sinistar_chase.py
 ```
 
-All scripts are pure Python 3 with `pyyaml` as the only dependency.
+All scripts are pure Python 3.

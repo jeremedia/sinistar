@@ -33,10 +33,18 @@ scoring:
     source: WITT/COLLISIO.ASM
 
   - event_id: destroy_planetoid
-    points: 5
+    points: 0
     trigger: Planetoid shatters from cumulative damage (sinibomb impact, accumulated player shots, or self-vibration overflow).
-    source: WITT/COLLISIO.ASM
-    note: The points value is intentionally trivial — planetoids exist as obstacles and crystal sources, not score targets.
+    source: WITT/COLLISIO.ASM:337-349 (SBOMB,PLANET path), FALS/N1ALL.ASM:519-533 (KRPl1..KRPl5)
+    note: |
+      Planetoids award NO points. Verified by reading every kill path:
+      both COLLISIO.ASM SBOMB,PLANET and FALS KRPl1..KRPl5 call
+      OKiVec / KilNorm without addscore. The "5 points" comment in
+      COLLISIO.ASM:37 is from the file header comment block and was
+      hedged with "(handled by KRPlan?)" — even the original author
+      was uncertain. KRPl* don't award points.
+      Earlier draft of this spec said 5 points; that was a misread.
+    confidence: high
 
   - event_id: bonus_extra_ship
     points: 0

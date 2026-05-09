@@ -12,7 +12,7 @@ The complete event-to-points mapping is in `data/scoring.yaml`. Summary:
 | Kill worker                 | 150     |
 | Kill warrior shot           | 100     |
 | Collect crystal (player)    | 200     |
-| Destroy planetoid           | 5       |
+| Destroy planetoid           | 0       |
 
 A few design notes about these values:
 
@@ -23,8 +23,12 @@ A few design notes about these values:
   threaten you indirectly (via Sinistar assembly).
 - **Crystals (200) are deliberately worth less than warrior kills** — the
   primary reward of crystals is the *sinibomb*, not the points.
-- **Planetoids (5)** are nearly worthless score-wise. They are obstacles
-  and crystal sources, not score targets. Don't reward smashing them.
+- **Planetoids award no points at all.** They are pure obstacles and
+  crystal sources. Verified by reading every planetoid kill path
+  (`WITT/COLLISIO.ASM:337-349` SBOMB,PLANET; `FALS/N1ALL.ASM:519-533`
+  KRPl1..KRPl5) — none calls `addscore`. The "5 points" mentioned in a
+  comment-block in `COLLISIO.ASM:37` is hedged with `(handled by KRPlan?)`
+  in the original; the answer is "no". Don't reward smashing planetoids.
 - **No combo / multiplier system.** Sinistar's score is flat. Modern
   remakes that add multipliers should make them optional / cosmetic; flat
   scoring rewards the right strategic priorities.

@@ -102,7 +102,7 @@ difficulty:
     - _PPl3    # planetoid type 3 target
     - _PPl5    # planetoid type 5 target
     - _WAgg    # warrior aggression
-  source: WITT/DIFFICUL.ASM, FALS/N1.ASM, FALS/WASHODDS.ASM
+  source: WITT/DIFFICUL.ASM, FALS/N1.ASM, WITT/WASHODDS.ASM
 
 modernization_notes:
   - The 21-byte packed pop array is a 6809 storage convenience. A modern remake

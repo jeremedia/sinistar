@@ -285,6 +285,142 @@ The spec is materially more accurate after this pass. The verification
 scripts in `verification/*.py` continue to pass; the formation script
 output now reflects the corrected 5-ship angles.
 
+## Third-pass corrections (post external code review)
+
+An external review caught regressions and a deeper mechanical miss. All
+findings confirmed and fixed.
+
+### 20. Prose chapters lagged YAML edits — **Corrected**
+
+In the second pass I updated YAML data files but missed two narrative
+mentions in `02-entities.md`:
+
+- The Player Shot section still claimed shots collect crystals.
+- The Sinibomb section still claimed bombs clear nearby workers/warriors.
+
+Both contradicted the corrected collision matrix in `03-physics-collision.md`
+and entries in `entities.yaml`. A reader following the spec's recommended
+"30-minute read" path (`00`, `02`, `05`, `10`) would have implemented
+wrong mechanics. Fixed in `02-entities.md`.
+
+### 21. Glossary stale — **Corrected**
+
+`12-glossary.md` Piece entry still said `pieces_required = 4` after the
+second pass corrected it to 12. Fixed.
+
+### 22. Planetoid crystal toss is threshold-then-proportional, **NOT** flat — **Corrected** (load-bearing)
+
+**Spec said:** flat 16/255 ≈ 6.3% per-frame chance to toss while vibrating.
+
+**Truth (`FALS/N1ALL.ASM:402-457`, TOSCRYS routine):**
+
+```
+A = OSRcht (current vibration)
+A = A - CrProb        ; CrProb = 16 is a THRESHOLD, not a probability
+if A <= 0: skip
+random_byte = rand()
+if random_byte > A: skip
+toss crystal
+vibration /= 2        ; (lsra) — vibration HALVED on successful toss
+```
+
+So `CrProb = 16` is a threshold the vibration must exceed, and the toss
+probability is `(vibration - 16) / 256` — proportional to the *excess*
+vibration above threshold. Examples:
+
+| vibration | excess | toss prob /frame |
+|-----------|--------|------------------|
+| 16        | 0      | 0%               |
+| 32        | 16     | ~6%              |
+| 64        | 48     | ~19%             |
+| 80        | 64     | ~25%             |
+| 96 (max)  | 80     | ~31%             |
+
+This gives planetoids a meaningful "tipping point" feel — light hits
+toss nothing; heavy hits cascade crystals. Plus the post-toss vibration
+halving means tosses self-limit (a planetoid won't dump all its crystals
+in one frame).
+
+The flat-probability model in my earlier draft would have under-tossed
+crystals near max vibration and over-tossed at low vibration —
+materially wrong for the crystal economy.
+
+Updated:
+- `tunables.yaml#planetoid.crystal_toss_threshold: 16` (renamed from
+  `crystal_toss_probability`, with explanatory note linking to the old name)
+- `tunables.yaml#planetoid.crystal_toss_vibration_decay: 2` (new — vibration halves on toss)
+- `02-entities.md` Planetoid section
+- `05-ai.md` Planetoid loop pseudocode
+- `verification/planetoid_loop.py` rewritten to use the correct logic
+
+### 23. Planetoids award NO score — **Corrected** (load-bearing)
+
+**Spec said:** 5 points per planetoid destroyed.
+
+**Truth:** **0 points.** Verified by reading every planetoid kill path:
+
+- `WITT/COLLISIO.ASM:337-349` (SBOMB,PLANET): calls `QBang` and
+  `OKiVec` twice (kill bomb, kill planet), no `addscore`.
+- `FALS/N1ALL.ASM:519-533` (KRPl1..KRPl5): each calls `KilVib` then
+  `KilNorm` and returns. No `addscore`.
+
+The "5 points" entry in my spec came from a comment block in
+`COLLISIO.ASM:31-37`:
+
+```
+;*      15,000 Sinistar skull
+;*         500 Sinistar skeleton piece
+;*         500 Warriors
+;*         200 Crystals
+;*         150 Workers
+;*         100 Warrior shot
+;*           5 Planetoids (including Pluto) (handled by KRPlan?)
+```
+
+Note the trailing `(handled by KRPlan?)` — even the original author
+hedged. The answer is "no, KRPl* don't award points". I trusted the
+comment instead of grepping for `addscore` calls. The reviewer's
+instinct to follow the call sites was the right verification approach.
+
+Updated:
+- `entities.yaml`: all five planetoid types `score_value: 0`
+- `scoring.yaml#destroy_planetoid.points: 0` with a note explaining the
+  comment-vs-code mismatch
+- `07-scoring.md` summary table and design note
+
+### 24. Verification scripts not reproducible without PyYAML — **Corrected**
+
+The scripts import `yaml` but the repo had no `requirements.txt` or
+install instructions. Added:
+
+- `spec/verification/requirements.txt` with `PyYAML>=6.0`
+- Updated `spec/verification/README.md` with `pip install` step
+
+### 25. WASHODDS provenance path wrong — **Corrected**
+
+`populations.yaml#difficulty.source` cited `FALS/WASHODDS.ASM`. The
+file in the repo is `WITT/WASHODDS.ASM` (Rich Witt's module — the WAgg
+warrior aggression code lives in WITT, not FALS). Fixed.
+
+## Why these slipped past pass 2
+
+Three patterns worth naming so the next reviewer can be fast:
+
+1. **YAML/prose drift.** I updated YAML records but didn't grep prose
+   for narrative mentions of the same concept. The fix is to either
+   centralize values (and have prose reference them) or to grep prose
+   for every changed YAML key. The coverage check confirms references
+   resolve, but doesn't catch wrong claims that don't reference YAML.
+2. **Trusting comments over call sites.** The "5 points planetoids"
+   error was reading a header comment block, not the actual score
+   calls. For score values, the only authoritative source is `addscore`
+   call sites. Same for behavior — the only authoritative source is
+   the routine being called.
+3. **Surface-skimming load-bearing routines.** I read `FALS/N1.ASM` and
+   `FALS/N1SYM.ASM` for population tables but not `FALS/N1ALL.ASM` for
+   the actual TOSCRYS routine. The "All" suffix should have been a
+   tell that this file aggregates the gameplay loops.
+
 ## What still needs verification
 
 These remain "needs_research" or "best-effort" in the YAML:

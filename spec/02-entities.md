@@ -89,13 +89,13 @@ See `04-player.md` for input, firing, and lives detail.
 
 ## Player Shot
 
-**Role:** player primary fire. Travels in the direction the ship is facing (or the joystick direction at fire-time). Hits warriors, workers, warrior shots, and crystals (collecting). Does NOT damage Sinistar.
+**Role:** player primary fire. Travels in the direction the ship is facing (or the joystick direction at fire-time). Hits warriors (+500), workers (+150), warrior shots (+100), and Sinistar pieces in transit (+500); adds vibration to planetoids. Does **NOT** collect crystals (pass-through) and does **NOT** damage Sinistar (pass-through). See `03-physics-collision.md` for the full collision matrix.
 
 **Visual identity:** Fast projectile, distinct from warrior shots. Multiple may be on-screen.
 
 ## Sinibomb
 
-**Role:** the only weapon that kills Sinistar. Player launches one; it homes in on Sinistar. On detonation, it also clears nearby workers and warriors. The player carries up to `tunables.yaml#max_in_bay = 20` sinibombs; each crystal collected adds one.
+**Role:** the only weapon that kills Sinistar. Player launches one; it homes in on Sinistar. Each Sinistar contact destroys one body piece (+500), stuns Sinistar for 2 frames, and consumes the bomb. Worker / warrior / planetoid contacts also kill the bomb and the target. **No area-of-effect** — each sinibomb collides with exactly one target. The player carries up to `tunables.yaml#max_in_bay = 20` sinibombs; each crystal collected via direct ship contact adds one.
 
 **Visual identity:** Larger than a player shot, slower, visibly homing. Should be readable as "this is the answer to Sinistar."
 
@@ -115,7 +115,7 @@ See `04-player.md` for input, firing, and lives detail.
 
 **Visual identity:** Five distinct planetoid types varying in size and apparent mass. The original used different rock sprites; modern art is open. Larger types should *read* as heavier (slower to push, higher inertia in collisions).
 
-**Vibration mechanic:** Each planetoid has a vibration "Richter" value, capped at `tunables.yaml#vibration_max = 96`. Each missile impact adds `#missile_vibration_add = 16`. Vibration decays by `#vibration_damp_per_frame = 2`. While vibrating, per frame there is a `#crystal_toss_probability = 16/255 ≈ 6.3%` chance of ejecting a crystal. At max vibration, the planetoid shatters.
+**Vibration mechanic:** Each planetoid has a vibration "Richter" value, capped at `tunables.yaml#vibration_max = 96`. Each missile impact adds `#missile_vibration_add = 16`. Vibration decays by `#vibration_damp_per_frame = 2`. Crystal-toss probability is *threshold-then-proportional*: tosses only happen when vibration exceeds `#crystal_toss_threshold = 16`, and the per-frame probability is `(vibration − threshold) / 256` (so ~0% just above threshold, ~31% at max vibration). After a successful toss, vibration is halved (`#crystal_toss_vibration_decay`). At max vibration, the planetoid shatters.
 
 ## Fragment / Particle
 
