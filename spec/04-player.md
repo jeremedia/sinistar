@@ -63,16 +63,21 @@ Implementation guidelines:
 
 ## Lives
 
-The player starts each game with a configured number of ships (typically 3
-in the operator default; verify against `MICA/HSTDIM.ASM`).
+The player starts each game with a configured number of ships. The factory
+default is **3** (`SAM/TB13.ASM:DEFALT` "SHIPS PER GAME" = `$03`). See
+`operator-defaults.yaml#ships_per_game`.
 
 **Earning extra ships:** see `07-scoring.md` and `operator-defaults.yaml#first_extra_ship_at`. Default: first extra at 30,000 points; subsequent every 30,000 points (operator-adjustable).
 
-**Losing a ship:** the player dies on:
+**Losing a ship (verified against `WITT/COLLISIO.ASM`):**
 
-- Collision with worker / warrior / planetoid (heavier collisions than bounces) — actually, the matrix in `03-physics-collision.md` says player–worker / warrior is bounce-with-damage; treat worker/warrior contact as fatal. Verify nuances against `WITT/COLLISIO.ASM`.
-- Hit by warrior shot
-- Bitten by Sinistar (`SINIBITE`)
+- Hit by a warrior shot (`PLAYER × WASHOT`, line 253-259) — instant death.
+- Bitten by Sinistar in `alive` state (`SINIBITE` at line 85-126).
+- Player–worker / warrior / planetoid collisions are **bounces, not deaths**
+  (lines 56-70). The bounce dynamics make these dangerous (the player can
+  be knocked into walls, into Sinistar, or out of position), but the
+  collisions themselves don't kill the ship. The player ship dies primarily
+  from warrior shots and Sinistar bites.
 
 On death:
 
@@ -90,9 +95,19 @@ same; ~2 seconds of invulnerability is reasonable.
 ## Sinibomb bay
 
 The bay holds up to `tunables.yaml#max_in_bay = 20` sinibombs. Each crystal
-collected by the player adds 1 (and 200 score). When the bay is full, additional
-crystals still award points but do not add to the bay (or the design choice is
-"crystals over capacity convert to bonus score" — verify against `WITT/COLLISIO.ASM`).
+collected by the player **via direct ship contact** adds 1 sinibomb to the
+bay and awards 200 score. Player shots do **not** collect crystals; they
+pass through (verified `WITT/COLLISIO.ASM:226`).
+
+When the bay is already full, the next crystal collected is still consumed
+but **no bomb is added**. The game plays a different tune
+(`sfx.yaml#crystal_saved_for_warp`) and displays the message
+**"CRYSTAL SAVED FOR WARP ENGINES"** (`WITT/COLLISIO.ASM:160-188`,
+`AddBomb` at MAXBOMBS branch). This is a charming reassurance that the
+"wasted" crystal isn't really wasted — it's saved for the warp drive after
+the player kills Sinistar. (Mechanically, score increment behavior at the
+overflow case should be preserved as in the original: crystal consumed,
+no bomb, no extra points.)
 
 The bay count is shown on the HUD.
 

@@ -13,17 +13,19 @@ profile, or cloud sync).
 
 ### Difficulty
 
-`operator-defaults.yaml#difficulty_of_play`. Integer 1–5, default 3.
+`operator-defaults.yaml#difficulty_of_play`. Integer 1–5, **factory default
+5** (verified `SAM/TB13.ASM:74`).
 
-A modern remake should expose this with friendly labels:
+A modern remake should expose this with friendly labels. Note the original
+ships at maximum:
 
-| value | label                |
-|-------|----------------------|
-| 1     | Easy                 |
-| 2     | Normal               |
-| 3     | Default (canonical)  |
-| 4     | Hard                 |
-| 5     | Brutal               |
+| value | label                          |
+|-------|--------------------------------|
+| 1     | Easy                           |
+| 2     | Normal                         |
+| 3     | Hard                           |
+| 4     | Brutal                         |
+| 5     | Nightmare (factory default)    |
 
 This setting affects DTime ramp speed and warrior aggression. See
 `06-progression.md`.

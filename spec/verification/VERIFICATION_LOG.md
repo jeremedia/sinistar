@@ -1,0 +1,301 @@
+# Verification Log
+
+This document records the second-pass verification of the spec against the
+original 1983 ROM source. Each finding is one of:
+
+- **Confirmed** — spec was correct as written
+- **Corrected** — spec value or behavior was wrong; fixed in this pass
+- **Added** — behavior present in source that was missing from the spec
+
+The changes are reflected in the YAML data files and prose chapters.
+
+## Files re-read directly during verification
+
+- `WITT/COLLISIO.ASM` — every collision pair, scoring, special cases
+- `WITT/SUBPART.ASM`, `SAM/ADDPIEC.ASM` — Sinistar piece economy
+- `SAM/SAMTABLE.ASM` (PIECETB / ALIVE / PIECEND) — assembly / HP arithmetic
+- `WITT/AIMWARR.ASM`, `WITT/WARRIOR.ASM`, `WITT/TABLES.ASM` (sqloffsets)
+- `WITT/WORKER.ASM`, `WITT/THINK.ASM`
+- `SAM/NEWTUNE.ASM`, `SAM/SAMTABLE.ASM` (Q* tune entries)
+- `SAM/ADDSCOR.ASM` (BCD scoring math)
+- `SAM/INITALL.ASM`, `MICA/HSTDIM.ASM`, `SAM/TB13.ASM` (CMOS init / DEFALT table)
+- `WITT/CHASE.ASM`, `WITT/VELOCITY.ASM` — speed-table consumer semantics
+- `SAM/FUNCTION.ASM` — `asrd0`–`asrd5` definitions
+
+## Findings
+
+### 1. Sinistar HP — **Corrected**
+
+**Spec said:** `pieces_required: 4` sinibomb hits.
+
+**Truth:** **12 sinibomb hits** to destroy a fully-assembled Sinistar.
+
+The piece table (`SAM/SAMTABLE.ASM:533`) has 20 entries: 12 skull/body
+pieces between `PIECETB` and the `ALIVE` marker, then 8 facial pieces
+(JAWR through NEZ) between `ALIVE` and `PIECEND`. During assembly,
+workers deliver 20 crystals → `PIECEPT` advances from `PIECETB` to
+`PIECEND`, then resets to the `ALIVE` marker. From the alive state,
+each sinibomb hit moves `PIECEPT` back one slot toward `PIECETB`
+(`WITT/SUBPART.ASM:62` → `SAM/ADDPIEC.ASM:25`). Reaching `PIECETB`
+triggers the death sequence (+15,000 points).
+
+Only the 12 body pieces are individually destructible. The 8 facial
+pieces are visual-only once assembled; they are not "armor", they
+simply aren't iterated by `SUBPIEC`. They do disappear when the death
+sequence fires.
+
+Updated:
+- `tunables.yaml#sinistar.pieces_required: 12`
+- `tunables.yaml#sinistar.assembly_pieces: 20` (now confirmed, with note)
+- `02-entities.md`, `05-ai.md` — narrative corrected
+- `entities.yaml#sinistar.hp_or_pieces: 12`
+
+### 2. Sinistar stun on hit — **Added**
+
+Each sinibomb hit increments an `InStun` timer by 2 frames
+(`WITT/COLLISIO.ASM:407-409`). While stunned, Sinistar's velocity is
+also halved (`WITT/SUBPART.ASM:74-85`). This is an important readability
+mechanic — the player can see the boss flinch.
+
+Added to `tunables.yaml#sinistar.stun_per_hit_frames: 2` and `05-ai.md`.
+
+### 3. Player shots do NOT collect crystals — **Corrected**
+
+**Spec said:** player_shot × crystal → crystal collected.
+
+**Truth:** the `CRYSTAL × PLSHOT` pair is **pass-through**
+(`WITT/COLLISIO.ASM:226`, in the commented "pass-through" list). Only
+direct ship contact collects a crystal (`PLAYER × CRYSTAL` →
+`AddBomb` + addscore $200, `WITT/COLLISIO.ASM:141-148`).
+
+Updated:
+- `03-physics-collision.md` collision matrix — removed false row
+- `02-entities.md` Player Shot description — corrected
+- `entities.yaml#player_shot` description — corrected
+
+### 4. Crystal-worker caller-match logic — **Added**
+
+A worker passes through any crystal that did not "call" it. Only the
+specific crystal whose `OScWCr` references this worker gets picked up
+(`WITT/COLLISIO.ASM:276-287`). This prevents workers from snatching
+random nearby crystals — they only collect the one assigned to them.
+
+This is a non-obvious design detail that affects tactical play (the
+player can sometimes intercept a tossed crystal even when a worker is
+nearby, if that worker isn't bound to it).
+
+Added to `05-ai.md` Worker section.
+
+### 5. Bomb-bay-full crystal pickup — **Added**
+
+When the player collides with a crystal while holding `MAXBOMBS = 20`
+sinibombs, the crystal is still consumed but no bomb is added. The
+game plays a different tune (`QFulCr`, priority 21) and displays the
+message "CRYSTAL SAVED FOR WARP ENGINES" (`WITT/COLLISIO.ASM:160-188`).
+
+This is a charming detail — the message reassures the player that the
+"wasted" crystal will pay off later.
+
+Added:
+- `sfx.yaml#crystal_saved_for_warp` event (replacing speculative `thrust`)
+- `04-player.md` and `02-entities.md` Crystal section
+
+### 6. Sinibomb has no AOE radius — **Corrected**
+
+**Spec said:** sinibomb detonation clears nearby workers/warriors.
+
+**Truth:** A sinibomb collides with exactly one target at a time
+(`WITT/COLLISIO.ASM:336-411`). Each `SBOMB × {WORKER, WORKCR, WARRIOR,
+PLANET, SINI, WASHOT}` pair kills both the bomb and the target — no
+splash damage. There is no AOE code path.
+
+The "panic clear" intuition I had was wrong. The bomb is powerful
+because (a) it homes, (b) it's the only thing that hurts Sinistar, and
+(c) on Sinistar contact it does damage *and* stuns. Not because of AOE.
+
+Updated:
+- `02-entities.md` Sinibomb section — removed AOE description
+- `03-physics-collision.md` — removed AOE paragraph
+
+### 7. 5-warrior squadron formation angles — **Corrected**
+
+**Spec said:** `formation_angle_5_ship: [128, 128, 128, 128]`.
+
+**Truth (`WITT/TABLES.ASM:172-175`):** `[128, 64, 128, 64]` (where 64
+is the assembler's workaround for the original signed `-(circle*12/16)
+= -192 ≡ 64 (mod 256)`).
+
+The other formation angles (2/3/4-ship) confirmed correct.
+
+Updated `tunables.yaml#warrior.formation_angle_5_ship`.
+
+### 8. Worker AI mission count — **Corrected**
+
+**Spec said:** 6 worker missions: DRIFT, TAIL, INTERCEPT, MINE,
+DELIVER_CRYSTAL, EVADE.
+
+**Truth (`WITT/WORKER.ASM:75-92`):** **5 missions**:
+DRIFT, TAIL, INTERCEPT, DELIVER_CRYSTAL, EVADE. There is no separate
+MINE mission for workers — workers TAIL planetoids when mining (the
+TAIL mission is "orbit any caller", and a planetoid can be the caller).
+
+Updated `05-ai.md` Worker section.
+
+### 9. Acceleration routine semantics inverted — **Corrected**
+
+**Spec said:** `asrd0` = instant, `asrd1` = slowest (1/128 per frame),
+`asrd5` = snappiest non-instant (1/8 per frame).
+
+**Truth (`SAM/FUNCTION.ASM:289-313`):** `asrdN` shifts D right by `N`
+bits. The output is added to the current velocity to close the gap
+toward target. So:
+
+| routine | shifts | gap closed per frame |
+|---------|--------|----------------------|
+| `asrd0` | 0      | full gap (instant)   |
+| `asrd1` | 1      | gap / 2              |
+| `asrd2` | 2      | gap / 4              |
+| `asrd3` | 3      | gap / 8              |
+| `asrd4` | 4      | gap / 16             |
+| `asrd5` | 5      | gap / 32             |
+
+`asrd1` is **the snappiest** non-instant routine; `asrd5` is **the
+slowest**. The inverted description was wrong.
+
+Updated `speed-tables.yaml#unit_notes.accel_routine_meaning` and
+`03-physics-collision.md`.
+
+### 10. Difficulty default — **Corrected**
+
+**Spec said:** `difficulty_of_play.default: 3` (best guess).
+
+**Truth (`SAM/TB13.ASM:74`):** Factory default is **5** (the maximum).
+
+Note: `SAM/TB13.ASM:71-88` is the canonical CMOS factory defaults
+table (`DEFALT`). Reading it cleared up several other unknowns.
+
+Updated `operator-defaults.yaml`.
+
+### 11. Player starting ships — **Confirmed and added**
+
+**Spec said:** "verify against MICA/HSTDIM.ASM".
+
+**Truth (`SAM/TB13.ASM:73`):** SHIPS PER GAME = `$03` = 3 ships.
+
+Added explicit `operator-defaults.yaml#ships_per_game.default: 3`.
+
+### 12. Continuous Fire setting — **Added**
+
+`SAM/TB13.ASM:75` defines a CMOS field "CONTINUOUS FIRE" with default
+`$01` (enabled). When enabled, holding the fire button auto-fires;
+when disabled, each shot requires a button press.
+
+Added to `operator-defaults.yaml`.
+
+### 13. Coinage default values — **Added**
+
+`SAM/TB13.ASM:76-83` exposes the coinage internals as discrete CMOS fields:
+
+| field   | default | meaning |
+|---------|---------|---------|
+| CSELCT  | `$03`   | coin select mode |
+| SLOT1M  | `$01`   | slot 1 multiplier |
+| SLOT2M  | `$04`   | slot 2 multiplier |
+| SLOT3M  | `$01`   | slot 3 multiplier |
+| CUNITC  | `$01`   | coin unit count |
+| CUNITB  | `$00`   | coin unit base |
+| MINUNT  | `$00`   | minimum units before credit |
+
+Added to `operator-defaults.yaml#settings.coinage.subfields` for
+completeness. A modern remake can ignore these in favor of free-play.
+
+### 14. SFX priorities — **Confirmed**
+
+I cross-checked every Q* entry in `SAM/SAMTABLE.ASM:340-466`. All
+priorities I had recorded match within the priority field (`_IPRIO`,
+1–63). One entry (`QFulCr`, priority 21, defined inline in
+`WITT/COLLISIO.ASM:182-188`) was missing from the spec; added in
+finding #5.
+
+The `warrior_alert` and `thrust` entries I had were **speculative** —
+no `Qwalert` or `Qthrust` exists in the source. Removed `thrust`;
+removed `warrior_alert` (no source).
+
+### 15. SFX duration semantics — **Clarified**
+
+Tune entries can have multiple `_PRIO`/`_TIME` segments. The total
+duration is the sum of all `_TIME` values until `_STOP`. My spec had
+some single-segment durations; I updated multi-segment entries to
+reflect total tune length.
+
+### 16. Speed table lookup — **Confirmed with addendum**
+
+The lookup walks rows largest-distance-first; the first row where
+`current_distance >= row.distance` matches (`WITT/VELOCITY.ASM:36-39`).
+The verification YAML's row ordering is correct. Added an explanatory
+note to `speed-tables.yaml#unit_notes`.
+
+### 17. Speed table units — **Clarified**
+
+The `speed` field is a 16-bit signed value in scanner-velocity units
+(scanner-pixels per Task16-tick ≈ 16 frames). The `subd SLVEL` step in
+`WITT/VELOCITY.ASM:99,134` confirms units are scanner-pixels.
+
+The conversion to a modern engine: treat `speed` as a relative tunable.
+The shapes of the curves (especially the non-monotonic Sinistar chase)
+matter more than absolute units.
+
+### 18. Scoring — **Confirmed**
+
+All score values match prose:
+
+| event | hex BCD | decimal |
+|-------|---------|---------|
+| Sinistar destroyed | `$7000+$8000` | 15,000 |
+| Sinistar piece destroyed | `$500` | 500 |
+| Warrior killed (any) | `$500` | 500 |
+| Worker killed (any) | `$150` | 150 |
+| Crystal collected | `$200` | 200 |
+| Warrior shot intercepted | `$100` | 100 |
+
+The Sinistar-destroyed score is split into two BCD addscore calls
+(`$7000` then `$8000`) because the BCD adder maxes at 4 BCD digits.
+
+### 19. PreBoY (pre-bounce-Y) — **Added**
+
+`WITT/COLLISIO.ASM:299` defines `PreBoY` — when Sinistar is alive but
+the player collides during warp, the bounce path is taken. Generally
+when planet ↔ {object} collide, the planet routes through `PreBou`
+which adds vibration before the bounce, then `PosBou` after. This
+means **collision with a planetoid adds vibration** (in addition to
+direct missile hits).
+
+Added to `05-ai.md` Planetoid section.
+
+## Summary
+
+- **8 corrections** (HP, formation, asrd, difficulty, AOE, player-shot crystal,
+  worker missions, sfx speculation)
+- **6 additions** (stun, caller-match, bay-full, ships, continuous fire,
+  coinage subfields, planet-bounce vibration)
+- **5 confirmations** (formation 2/3/4, all SFX priorities checked, scoring,
+  speed-table semantics, speed-table lookup direction)
+
+The spec is materially more accurate after this pass. The verification
+scripts in `verification/*.py` continue to pass; the formation script
+output now reflects the corrected 5-ship angles.
+
+## What still needs verification
+
+These remain "needs_research" or "best-effort" in the YAML:
+
+- Operator difficulty range — confirmed default 5, but the upper bound
+  (5? 9? something else?) needs verification against the diag ROM,
+  which is out of spec scope. **Pragma:** treat as 1–5 in the remake.
+- Operator message length cap — would require tracing `MICA/ATTMSGS.ASM`.
+- Several tune-table durations are sums of multi-segment `_TIME` values;
+  if a tune ends early via priority pre-emption, effective duration is
+  shorter. The YAML records *maximum* durations.
+- The `BargraphEnable` / `WittRock` / debug-utilities code paths are
+  out of canon scope but contain unused-but-interesting design
+  fragments. Not extracted.

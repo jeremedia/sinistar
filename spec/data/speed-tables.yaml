@@ -4,13 +4,15 @@
 
 unit_notes:
   distance_units: |
-    Pixels in world space. Note: original 6809 code stores some distances
-    left-shifted (×8) for fixed-point precision; values here are in pixels
-    after that shift is undone.
+    Pixels in world / scanner space. The lookup walks rows largest-distance-first;
+    the first row where current_distance >= row.distance matches.
+    See WITT/VELOCITY.ASM:36-39.
   speed_units: |
-    Original "nano-pixel per 16ms tick" units. To approximate pixels/frame
-    at 60Hz: divide by 16 (rough). Treat as relative tunables — the *shape*
-    of each table (band ratios) matters more than absolute units.
+    Signed 16-bit scanner-velocity (scanner-pixels per Task16-tick, ~16 frames).
+    The consumer (WITT/VELOCITY.ASM) subtracts target velocity (subd SLVEL/SSVEL)
+    so units are scanner-pixels/tick.
+    Treat as relative tunables — the *shape* of each table matters more than
+    absolute units in a remake.
   accel_routines:
     - asrd0
     - asrd1
@@ -19,12 +21,13 @@ unit_notes:
     - asrd4
     - asrd5
   accel_routine_meaning:
-    asrd0: No acceleration — instant snap to target speed
-    asrd1: 1/128 of velocity delta per frame — extremely lazy
-    asrd2: 1/64 of velocity delta per frame — slow
-    asrd3: 1/32 of velocity delta per frame — moderate
-    asrd4: 1/16 of velocity delta per frame — quick
-    asrd5: 1/8 of velocity delta per frame — snappy
+    asrd0: Instant — full velocity gap closed in one frame (snap)
+    asrd1: 1/2 of velocity gap per frame — snappiest gradual accel
+    asrd2: 1/4 of velocity gap per frame — quick
+    asrd3: 1/8 of velocity gap per frame — moderate
+    asrd4: 1/16 of velocity gap per frame — slow
+    asrd5: 1/32 of velocity gap per frame — slowest (most "floaty")
+  accel_routine_source: SAM/FUNCTION.ASM:289-313 (asrdN = arithmetic shift right N times, applied to velocity delta)
 
 tables:
   - id: stbl_worker

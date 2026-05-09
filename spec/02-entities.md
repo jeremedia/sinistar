@@ -44,7 +44,7 @@ See `04-player.md` for input, firing, and lives detail.
 
 - **absent**: not yet on map (early in a sector); pieces are being delivered
 - **assembling**: visible but incomplete; partial collision; cannot bite; speaks `i_am_sinistar`
-- **alive**: fully assembled; chases player; speaks aggressive lines (`beware_i_live`, `run_coward`, etc.); can bite; takes 4 sinibomb hits to kill (`tunables.yaml#pieces_required`)
+- **alive**: fully assembled; chases player; speaks aggressive lines (`beware_i_live`, `run_coward`, etc.); can bite; takes 12 sinibomb hits to kill (`tunables.yaml#pieces_required`). Each sinibomb hit destroys one body piece, awards 500 points, and stuns Sinistar for `tunables.yaml#stun_per_hit_frames = 2` frames (and halves its current velocity).
 - **dying**: shatter animation; no collision; cleared from sector
 
 **Approach behavior:** Sinistar's chase uses the table `speed-tables.yaml#stbl_sinistar_chase`. The curve is *non-monotonic* — speed rises, drops at medium range (~1024px), then rises sharply at close range. This is the iconic "winding up" feel; preserve the curve shape.

@@ -58,9 +58,9 @@ Planetoid slopes are per-type and similarly tuned.
 
 ### Operator difficulty knob
 
-The operator's `difficulty_of_play` setting (1–5, default 3) modulates
-how aggressively DTime climbs and how high `_WAgg` (warrior aggression)
-peaks:
+The operator's `difficulty_of_play` setting (1–5, **factory default 5**,
+verified `SAM/TB13.ASM:74`) modulates how aggressively DTime climbs and
+how high `_WAgg` (warrior aggression) peaks:
 
 - First sector (wave 0): DTime is pre-advanced by `difficulty * operator_difficulty_multiplier_first_zone = difficulty * 10`.
 - Subsequent sectors: DTime is pre-advanced by `difficulty * operator_difficulty_advancement_subsequent_zones = difficulty * 6`.

@@ -151,25 +151,14 @@ sound_effects:
     source: SAM/SAMTABLE.ASM:QCOIN
     modernization: In a remake without coin slots, repurpose as a "credits added" or "new game" cue, or omit.
 
-  - event_id: warrior_alert
-    description: Warrior squadron entering attack range.
-    priority: 28
-    duration_ticks: 16
+  - event_id: crystal_saved_for_warp
+    description: Player picks up a crystal while bay is full (20 sinibombs). Crystal is consumed, no bomb added; "CRYSTAL SAVED FOR WARP ENGINES" message displays.
+    priority: 21
+    duration_ticks: 12
     looped: false
-    legacy_sound_id: 4
-    waveform_hint: Sharp metallic alert — rising-then-falling.
-    source: SAM/SAMTABLE.ASM
-    note: Best-effort mapping — verify against warrior spawn/state-change call sites.
-
-  - event_id: thrust
-    description: Player thrust feedback (when engaged).
-    priority: 8
-    duration_ticks: 8
-    looped: true
-    legacy_sound_id: 2
-    waveform_hint: Low-frequency continuous hum scaling with throttle.
-    source: SAM/SAMTABLE.ASM
-    note: Best-effort mapping — may also be associated with the attract-mode tail effect (SAMTAIL).
+    legacy_sound_id: 17
+    waveform_hint: Pickup tone with reassuring quality (signals "stored, not wasted").
+    source: WITT/COLLISIO.ASM:182-188 (QFulCr inline definition)
 
 modernization_notes:
   - Priorities and durations are reference values. Modern audio engines should

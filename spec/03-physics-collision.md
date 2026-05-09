@@ -17,19 +17,28 @@ otherwise quantize to zero velocity.
 ## Acceleration
 
 Each entity's velocity is updated by an **acceleration profile** chosen from a
-small set of routines (`asrd0`–`asrd5` in `speed-tables.yaml`). The profiles
-correspond to ease-toward-target curves of varying snappiness:
+small set of routines (`asrd0`–`asrd5`, defined in `SAM/FUNCTION.ASM:289-313`).
+Each routine arithmetic-shifts the velocity gap right by N bits and adds the
+result back to current velocity. So `asrdN` closes `1 / 2^N` of the gap per
+frame:
 
-- `asrd0`: instant — velocity snaps to target
-- `asrd1`: slowest — barely closes 1/128 of the gap per frame
-- `asrd5`: snappiest non-instant — closes 1/8 of the gap per frame
+| routine | shifts | gap closed per frame |
+|---------|--------|----------------------|
+| `asrd0` | 0      | full gap (instant)   |
+| `asrd1` | 1      | gap / 2 (snappiest)  |
+| `asrd2` | 2      | gap / 4              |
+| `asrd3` | 3      | gap / 8              |
+| `asrd4` | 4      | gap / 16             |
+| `asrd5` | 5      | gap / 32 (slowest)   |
 
 For each AI entity, the chosen speed table (e.g., `stbl_warrior_intercept`)
 gives a *target* speed for the current distance to target; the row's `accel`
 field tells the entity how fast to ease toward that speed.
 
 A modern remake can use any reasonable easing curve. The naming convention is
-preserved here purely as a vocabulary for the speed tables.
+preserved here purely as a vocabulary for the speed tables. Note that
+`speed-tables.yaml#unit_notes.accel_routine_meaning` is the authoritative
+reference.
 
 ## Elastic collisions (bounce)
 
@@ -60,31 +69,66 @@ The `bounce_collision` SFX (`sfx.yaml`) plays at priority 16 for 3 ticks.
 Not every entity pair collides, and not every collision is a bounce. The pair
 behavior is governed by a matrix:
 
-| pair                              | behavior                                                  |
-|----------------------------------- |----------------------------------------------------------- |
-| player_ship × worker / warrior     | bounce + damage to player (lose ship, dying state)         |
-| player_ship × planetoid            | bounce (player takes no damage; ship can be wedged)        |
-| player_ship × crystal              | crystal collected (200 pts, +1 sinibomb), no bounce        |
-| player_ship × sinistar (alive)     | bite — player dies; Sinistar continues                     |
-| player_shot × worker               | worker dies (150 pts); shot consumed                       |
-| player_shot × warrior              | warrior dies (500 pts); shot consumed                      |
-| player_shot × warrior_shot         | both consumed (100 pts)                                    |
-| player_shot × sinistar_piece       | piece destroyed (500 pts); shot consumed                   |
-| player_shot × planetoid            | planetoid takes vibration; shot consumed                   |
-| player_shot × sinistar             | shot consumed; **no damage** to Sinistar                   |
-| player_shot × crystal              | crystal collected (200 pts, +1 sinibomb); shot consumed    |
-| sinibomb × sinistar                | Sinistar takes 1/4 damage; sinibomb consumed; AOE blast    |
-| sinibomb × worker / warrior        | enemy dies (150 / 500 pts); sinibomb consumed              |
-| sinibomb × planetoid               | planetoid takes large vibration; sinibomb consumed         |
-| warrior_shot × player_ship         | player dies (no bounce, no points)                         |
-| worker × planetoid (mining state)  | mine — extracts crystal, no bounce                         |
-| worker × sinistar (delivering)     | crystal delivered, assembly +1                             |
-| object × object (same kind)        | bounce (workers off workers, crystals off crystals, etc.) |
-| fragment × anything                | no collision (visual particle only)                        |
+The pair behavior matrix below is verified against `WITT/COLLISIO.ASM`.
 
-This table is the canon. The original implements it via a 16-bit collision-
-mask per type indexed by a `CLTABLE`; a remake can use any pair-keyed
-data structure.
+**Bounces (mass-weighted elastic):**
+
+| pair                                  | notes                                       |
+|--------------------------------------- |---------------------------------------------|
+| player ↔ worker / worker_w_crystal     | bounce; disabled during warp                |
+| player ↔ warrior                       | bounce; disabled during warp                |
+| player ↔ planetoid                     | bounce + planet vibrates (PreBou/PosBou)    |
+| player ↔ sinistar (assembling)         | bounce — Sinistar can't bite until ALIVE    |
+| crystal ↔ crystal / worker_w_crystal / warrior | bounce                            |
+| worker ↔ worker / worker_w_crystal / warrior  | bounce                             |
+| worker_w_crystal ↔ worker_w_crystal / warrior | bounce                             |
+| warrior ↔ warrior                      | bounce                                      |
+| planet ↔ crystal / worker / worker_w_crystal / warrior | bounce + planet vibrates    |
+| planet ↔ planet                        | bounce + both vibrate                       |
+| planet ↔ sinistar                      | bounce + planet may shatter                 |
+| sinistar ↔ sinistar                    | bounce (rare; only in pathological states)  |
+
+**Pickups, hits, and special:**
+
+| pair                                  | behavior                                       |
+|--------------------------------------- |------------------------------------------------|
+| player ↔ crystal                       | crystal consumed (+200 pts, +1 sinibomb to bay if not full; "CRYSTAL SAVED FOR WARP ENGINES" if full) |
+| player ↔ sinistar (alive)              | SINIBITE — player dies; Sinistar speech queued |
+| player ↔ warrior_shot                  | player dies; shot consumed                     |
+| player_shot ↔ worker / worker_w_crystal | worker dies (+150 pts); shot consumed; if WORKCR, crystal is left behind |
+| player_shot ↔ warrior                  | warrior dies (+500 pts); shot consumed         |
+| player_shot ↔ warrior_shot             | both consumed (+100 pts)                       |
+| player_shot ↔ planet                   | planet vibrates; shot consumed                 |
+| warrior_shot ↔ worker / worker_w_crystal | worker dies; shot consumed (no points to player) |
+| sinibomb ↔ sinistar                    | one body piece destroyed (+500 pts); planet vibrates; bomb consumed; Sinistar gains +2 stun frames |
+| sinibomb ↔ worker / worker_w_crystal   | worker dies (+150 pts); bomb consumed; "SINIBOMB INTERCEPTED" message |
+| sinibomb ↔ warrior                     | warrior dies (+500 pts); bomb consumed; "SINIBOMB INTERCEPTED" message |
+| sinibomb ↔ planet                      | planet shattered; bomb consumed                |
+| sinibomb ↔ warrior_shot                | both consumed                                  |
+| crystal ↔ worker (caller-match only)   | if this crystal "called" this worker (OScWCr), crystal is given to worker; else PASS THROUGH |
+| {warrior_shot, worker, worker_w_crystal, warrior} ↔ fragment | fragment dies; shot/object continues |
+
+**Pass-through (explicit no-op):**
+
+- `player ↔ sinibomb / player_shot / fragment`
+- `sinibomb ↔ player_shot / sinibomb / crystal / fragment`
+- `worker_w_crystal ↔ sinistar` (workers carrying crystals deliver via different path, not collision)
+- `warrior ↔ warrior_shot`, `warrior_shot ↔ warrior_shot`
+- `planet ↔ fragment`
+- `crystal ↔ player_shot / warrior_shot / fragment` (player shots do **not** collect crystals)
+- `sinistar ↔ player_shot / warrior_shot / fragment` (player shots do **not** damage Sinistar)
+- `player_shot ↔ fragment`, `fragment ↔ fragment`
+
+**Important corrections from earlier drafts:**
+
+- Player shots do **not** collect crystals. Only ship contact does.
+- Player shots do **not** damage Sinistar. Only sinibombs do.
+- Sinibomb has **no AOE**. Each sinibomb collides with exactly one target.
+- Crystal-worker pickup requires caller-match — workers don't pick up arbitrary nearby crystals.
+
+The original implements this matrix via 16-bit collision masks per type
+indexed by `CLTABLE` (`SAM/SAMTABLE.ASM:597`); a remake can use any
+pair-keyed data structure.
 
 ## Pixel-precise collision
 
@@ -107,17 +151,20 @@ dies (`SINIBITE` collision). The mouth offset is given by
 During player warp-out (post-Sinistar-kill, see `04-player.md`), all player
 collisions are disabled.
 
-## Sinibomb area-of-effect
+## Sinibomb impact (no AOE)
 
-When a sinibomb detonates (on Sinistar contact, on auto-detonate near
-Sinistar, or on impact with another enemy), **all on-screen and nearby
-off-screen workers and warriors in a small radius** are destroyed. This is
-the "panic clear" behavior — sinibombs are powerful, which is why the
-crystal economy gates them.
+Each sinibomb collides with exactly one target. There is no splash damage.
+The sinibomb is powerful for three other reasons:
 
-The exact radius is implementation-tunable; the *behavior contract* is:
-"a sinibomb detonation should clear the immediate threats around its impact
-point and is the dominant tool for breaking up swarming attacks."
+1. **It homes** on Sinistar (via `speed-tables.yaml#stbl_sinibomb`), so the
+   player doesn't need to aim it.
+2. **It is the only weapon that damages Sinistar.** Player shots pass through.
+3. **On Sinistar contact**, it both destroys one body piece (+500 pts) and
+   stuns Sinistar for `tunables.yaml#stun_per_hit_frames = 2` frames.
+
+Because the bay holds at most 20 sinibombs and each crystal grants only one,
+the crystal economy is the gate on sinibomb usage. No AOE is needed for the
+bomb to feel powerful.
 
 ## Warp immunity
 

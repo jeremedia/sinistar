@@ -7,6 +7,11 @@ implement Sinistar 2026.
 
 ## Files
 
+- [`VERIFICATION_LOG.md`](VERIFICATION_LOG.md) — second-pass verification
+  log: corrections and additions made to the spec after re-reading the
+  load-bearing asm files (`COLLISIO`, `SUBPART`, `ADDPIEC`, `WARRIOR`,
+  `WORKER`, `TABLES`, `NEWTUNE`, `SAMTABLE`, `TB13`, `FUNCTION`,
+  `VELOCITY`). Read this first to understand what changed and why.
 - [`coverage_check.py`](coverage_check.py) — walks every prose chapter
   and confirms each `data/*.yaml#id` reference resolves. Run with
   `python3 verification/coverage_check.py` from `spec/`.

@@ -82,18 +82,25 @@ tunables:
       note: Shrinks fully on-screen until reaching 3/4 of MaxSinOrbit, then continues shrinking off-screen.
 
     - name: pieces_required
-      value: 4
+      value: 12
       unit: pieces
-      description: Number of sinibomb hits required to destroy a fully-assembled Sinistar.
-      source: WITT/COLLISIO.ASM
-      note: Distinct from the visual skull-piece assembly that builds Sinistar from worker crystal deliveries.
+      description: Sinibomb hits required to destroy a fully-assembled Sinistar. Each hit moves PIECEPT back one slot; reaching PIECETB triggers death. Only the 12 body pieces (PIECETB through ALIVE marker) are individually destructible.
+      source: WITT/SUBPART.ASM, SAM/ADDPIEC.ASM:SUBPIEC, SAM/SAMTABLE.ASM:PIECETB
+      confidence: high
 
     - name: assembly_pieces
       value: 20
       unit: pieces
-      description: Number of crystals workers must deliver to fully assemble Sinistar.
-      source: WITT/SINI.ASM, FALS/N1.ASM
-      note: Best-effort — verify against piece-count tracking RAM.
+      description: Total crystals workers must deliver to fully assemble Sinistar (12 body pieces between PIECETB and ALIVE marker, plus 8 facial pieces between ALIVE and PIECEND). After full assembly, both PIECEPT and FINISH reset to the ALIVE marker, and Sinistar enters its hunting state.
+      source: SAM/SAMTABLE.ASM:PIECETB, SAM/ADDPIEC.ASM:ADDPIEC
+      confidence: high
+
+    - name: stun_per_hit_frames
+      value: 2
+      unit: frames
+      description: Each sinibomb hit on Sinistar adds 2 to InStun; while stunned, Sinistar cannot move. Velocity is also halved on each hit.
+      source: WITT/COLLISIO.ASM:407-409, WITT/SUBPART.ASM:74-85
+      confidence: high
 
     - name: sprite_height
       value: 26
@@ -154,26 +161,26 @@ tunables:
     - name: formation_angle_2_ship
       value: [128]
       unit: degrees_circle256
-      description: Wing offset for a 2-warrior squadron (CIRCLE=256). One warrior at +128° from leader.
-      source: WITT/AIMWARR.ASM
+      description: Wing offset for a 2-warrior squadron (CIRCLE=256). Follower at +128° (= 180°) from leader.
+      source: WITT/TABLES.ASM:157
 
     - name: formation_angle_3_ship
       value: [128, 192]
       unit: degrees_circle256
-      description: Wing offsets for a 3-warrior squadron.
-      source: WITT/AIMWARR.ASM
+      description: Wing offsets for a 3-warrior squadron. +128° (180°), +192° (270°).
+      source: WITT/TABLES.ASM:161-162
 
     - name: formation_angle_4_ship
       value: [128, 192, 160]
       unit: degrees_circle256
-      description: Wing offsets for a 4-warrior squadron.
-      source: WITT/AIMWARR.ASM
+      description: Wing offsets for a 4-warrior squadron. +128° (180°), +192° (270°), +160° (225°).
+      source: WITT/TABLES.ASM:166-168
 
     - name: formation_angle_5_ship
-      value: [128, 128, 128, 128]
+      value: [128, 64, 128, 64]
       unit: degrees_circle256
-      description: Wing offsets for a 5-warrior squadron (paired opposites).
-      source: WITT/AIMWARR.ASM
+      description: Wing offsets for a 5-warrior squadron (paired opposites). Original code intended -(circle*12/16) = -192 ≡ 64 (mod 256); the assembler workaround uses literal $40 = 64.
+      source: WITT/TABLES.ASM:172-175
 
   worker:
     - name: drift_orbit_radius

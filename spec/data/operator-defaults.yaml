@@ -4,22 +4,63 @@
 
 settings:
   - id: coinage
-    description: Coin slot configuration and credits-per-coin.
+    description: Coin slot configuration. Decomposed in CMOS into separate fields (coin select mode, three slot multipliers, coin unit count/base, minimum units before credit).
     type: struct
-    default: needs_research
     persistence: cmos
-    source: MICA/HSTDIM.ASM
+    source: SAM/TB13.ASM:DEFALT
+    confidence: high
+    subfields:
+      - { name: coin_select_mode (CSELCT), default: 3 }
+      - { name: slot_1_multiplier (SLOT1M), default: 1 }
+      - { name: slot_2_multiplier (SLOT2M), default: 4 }
+      - { name: slot_3_multiplier (SLOT3M), default: 1 }
+      - { name: coin_unit_count (CUNITC), default: 1 }
+      - { name: coin_unit_base (CUNITB), default: 0 }
+      - { name: minimum_units (MINUNT), default: 0 }
     modernization: A modern remake without coin slots can omit this entirely or repurpose for free-play / arcade-cab modes.
 
   - id: difficulty_of_play
     description: Operator difficulty knob. Scales DTime growth and warrior aggression; higher = enemies escalate faster.
     type: integer
     range: [1, 5]
-    default: 3
-    default_confidence: best_guess
+    default: 5
     persistence: cmos
-    source: SAM/SAMTABLE.ASM, FALS/N1.ASM
+    source: SAM/TB13.ASM:DEFALT (line 74)
+    confidence: high
+    note: Factory default is 5 (the maximum). This is the spec's canonical "default difficulty" for a remake.
     cross_ref: populations.yaml#difficulty
+
+  - id: ships_per_game
+    description: Starting player ships per game.
+    type: integer
+    default: 3
+    persistence: cmos
+    source: SAM/TB13.ASM:DEFALT (line 73)
+    confidence: high
+
+  - id: continuous_fire
+    description: When enabled, holding the fire button auto-fires; when disabled, each shot requires a separate press.
+    type: bool
+    default: true
+    persistence: cmos
+    source: SAM/TB13.ASM:DEFALT (line 75, value $01)
+    confidence: high
+
+  - id: high_score_to_date_allowed
+    description: Whether the persistent high-score table (Immortals) is enabled at all.
+    type: bool
+    default: true
+    persistence: cmos
+    source: SAM/TB13.ASM:DEFALT (line 76, value $01)
+    confidence: high
+
+  - id: autocycle
+    description: Attract-mode autocycle behavior toggle.
+    type: bool
+    default: false
+    persistence: cmos
+    source: SAM/TB13.ASM:DEFALT (line 87, value $00)
+    confidence: high
 
   - id: first_extra_ship_at
     description: Score (in points) for first extra-ship award.
@@ -27,7 +68,8 @@ settings:
     unit: points
     default: 30000
     persistence: cmos
-    source: MICA/HSTDIM.ASM
+    source: SAM/TB13.ASM:DEFALT (line 71, value $30 = 30 × 1000 points)
+    confidence: high
     note: Original development default was 5,000; raised to 30,000 for shipped ROM. The "ExtraShipFix" mod restores 5,000.
 
   - id: additional_extra_ship_factor
@@ -36,7 +78,9 @@ settings:
     unit: points
     default: 30000
     persistence: cmos
-    source: MICA/HSTDIM.ASM
+    source: SAM/TB13.ASM:DEFALT (line 72, value $30 = 30 × 1000 points)
+    confidence: high
+    note: Comment in TB13.ASM notes "this was originally $05 in SAM/DEFAULT.SRC".
 
   - id: high_score_table_reset
     description: Operator action that clears CMOS and RAM high-score tables to seed defaults.
