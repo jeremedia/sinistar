@@ -1,0 +1,210 @@
+# Sinistar entity catalog — implementation-independent.
+# Stats extracted from the 1983 ROM source. Sizes are reference values for
+# proportion; modern remakes need not match pixel-for-pixel.
+
+entities:
+  - id: player_ship
+    display_name: Player Ship
+    role: player
+    mass: 5
+    scan_footprint: [1, 1]
+    approx_pixel_size: [24, 16]
+    hp_or_pieces: n/a
+    score_value: null
+    description: Player-controlled craft with momentum-based 49-direction movement, primary fire, and sinibomb release.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(player)
+      - SAM/EQUATES.ASM
+
+  - id: sinistar
+    display_name: Sinistar (Complete)
+    role: enemy
+    mass: 255
+    scan_footprint: [6, 6]
+    approx_pixel_size: [49, 26]
+    hp_or_pieces: 4
+    score_value: 15000
+    description: Boss entity assembled from skull pieces; once complete, it hunts and bites the player. Killed only by sinibombs.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(sinistar)
+      - SAM/SAMEQUAT.ASM:SINIHIG,SINIWID,SINILCE,SINISCE
+      - WITT/COLLISIO.ASM
+
+  - id: sinistar_piece
+    display_name: Sinistar Piece (skull fragment)
+    role: collectible_for_enemy
+    mass: 0
+    scan_footprint: [1, 1]
+    approx_pixel_size: [16, 16]
+    hp_or_pieces: n/a
+    score_value: 500
+    description: Individual skull piece carried by workers to assemble Sinistar. Player score for shooting one before delivery.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(piece)
+      - SAM/ADDPIEC.ASM
+
+  - id: worker
+    display_name: Worker
+    role: enemy
+    mass: 1
+    scan_footprint: [1, 1]
+    approx_pixel_size: [8, 12]
+    hp_or_pieces: n/a
+    score_value: 150
+    description: Small drone that mines crystals from planetoids and delivers them to assemble Sinistar.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(worker)
+      - SAM/IMAGE.ASM
+      - WITT/COLLISIO.ASM
+
+  - id: worker_with_crystal
+    display_name: Worker (carrying crystal)
+    role: enemy
+    mass: 2
+    scan_footprint: [1, 1]
+    approx_pixel_size: [8, 12]
+    hp_or_pieces: n/a
+    score_value: 150
+    description: Worker variant carrying a captured crystal toward Sinistar; killing one drops the crystal for player pickup.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(worker_crystal)
+      - WITT/WORKER.ASM
+
+  - id: warrior
+    display_name: Warrior
+    role: enemy
+    mass: 2
+    scan_footprint: [2, 2]
+    approx_pixel_size: [17, 8]
+    hp_or_pieces: n/a
+    score_value: 500
+    description: Aggressive enemy that flies in formations and fires aimed shots at the player.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(warrior)
+      - SAM/IMAGE.ASM
+      - WITT/WARRIOR.ASM
+
+  - id: warrior_shot
+    display_name: Warrior Shot
+    role: projectile
+    mass: 0
+    scan_footprint: [0, 0]
+    approx_pixel_size: [5, 3]
+    hp_or_pieces: n/a
+    score_value: 100
+    description: Aimed projectile fired by warriors; can be intercepted by player shots for points.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(warrior_shot)
+      - WITT/COLLISIO.ASM
+
+  - id: player_shot
+    display_name: Player Shot
+    role: projectile
+    mass: 0
+    scan_footprint: [0, 0]
+    approx_pixel_size: [1, 5]
+    hp_or_pieces: n/a
+    score_value: null
+    description: Fast directional projectile fired by player; consumes no ammunition. Multiple may be on-screen simultaneously.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(player_shot)
+      - SAM/PLSHOOT.ASM
+
+  - id: sinibomb
+    display_name: Sinibomb
+    role: projectile
+    mass: 1
+    scan_footprint: [0, 0]
+    approx_pixel_size: [5, 5]
+    hp_or_pieces: n/a
+    score_value: null
+    description: Player-launched homing weapon. The only weapon that damages Sinistar; also clears nearby enemies on detonation.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(sinibomb)
+      - WITT/SINIBOMB.ASM
+
+  - id: crystal
+    display_name: Crystal
+    role: collectible
+    mass: 1
+    scan_footprint: [0, 0]
+    approx_pixel_size: [2, 2]
+    hp_or_pieces: n/a
+    score_value: 200
+    description: Awarded resource. Player collection adds a sinibomb to the bay; worker collection feeds Sinistar assembly.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(crystal)
+      - WITT/COLLISIO.ASM
+
+  - id: planetoid_1
+    display_name: Planetoid Type 1
+    role: hazard
+    mass: 60
+    scan_footprint: [3, 3]
+    approx_pixel_size: [26, 14]
+    hp_or_pieces: n/a
+    score_value: 5
+    description: Large drifting rock. Vibrates when hit and ejects crystals; shatters into fragments at peak vibration.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(planetoid_1)
+
+  - id: planetoid_2
+    display_name: Planetoid Type 2
+    role: hazard
+    mass: 50
+    scan_footprint: [3, 3]
+    approx_pixel_size: [24, 13]
+    hp_or_pieces: n/a
+    score_value: 5
+    description: Medium planetoid; same vibration behavior as type 1 with smaller mass.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(planetoid_2)
+
+  - id: planetoid_3
+    display_name: Planetoid Type 3
+    role: hazard
+    mass: 20
+    scan_footprint: [2, 2]
+    approx_pixel_size: [18, 10]
+    hp_or_pieces: n/a
+    score_value: 5
+    description: Small planetoid; shatters more readily, fewer crystals.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(planetoid_3)
+
+  - id: planetoid_4
+    display_name: Planetoid Type 4
+    role: hazard
+    mass: 50
+    scan_footprint: [3, 3]
+    approx_pixel_size: [27, 12]
+    hp_or_pieces: n/a
+    score_value: 5
+    description: Variant medium planetoid (alternate art).
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(planetoid_4)
+
+  - id: planetoid_5
+    display_name: Planetoid Type 5
+    role: hazard
+    mass: 90
+    scan_footprint: [3, 4]
+    approx_pixel_size: [28, 16]
+    hp_or_pieces: n/a
+    score_value: 5
+    description: Largest planetoid. High mass; slower, harder to push, yields the most crystals before shattering.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(planetoid_5)
+
+  - id: fragment
+    display_name: Fragment / Particle
+    role: particle
+    mass: 0
+    scan_footprint: [0, 0]
+    approx_pixel_size: [1, 5]
+    hp_or_pieces: n/a
+    score_value: null
+    description: Inert debris from explosions. Collisionless visual particle; tumbles outward and decays.
+    source:
+      - SAM/SAMTABLE.ASM:PIECETB(fragment)
+      - SAM/FRAGEXP.ASM

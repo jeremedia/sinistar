@@ -1,0 +1,179 @@
+# Sound effects keyed by gameplay event (NOT by 1983 sound-board ID).
+# A modern remake should pick its own waveforms; the `waveform_hint` field
+# describes the original sound's character as a reference, not a requirement.
+# `legacy_sound_id` and `priority` are informational provenance.
+
+queue_rules:
+  description: |
+    The original 6800 sound CPU runs a priority queue: a higher-priority event
+    interrupts a lower-priority one. Equal priorities queue. Looping events
+    re-enqueue themselves until cancelled.
+  priority_range: [1, 63]
+  modernization: |
+    Map to a modern audio engine's voice-stealing strategy. Events with
+    priority ≥40 should never drop; the rest can be voice-stolen if the
+    audio mixer is saturated.
+
+sound_effects:
+  - event_id: bounce_collision
+    description: Object-on-object elastic bounce (player vs worker, etc).
+    priority: 16
+    duration_ticks: 3
+    looped: false
+    legacy_sound_id: 20
+    waveform_hint: Brief metallic click — short attack, fast decay.
+    source: SAM/SAMTABLE.ASM:QBOUNCE
+
+  - event_id: player_fire
+    description: Player primary shot.
+    priority: 19
+    duration_ticks: 16
+    looped: false
+    legacy_sound_id: 17
+    waveform_hint: Short electronic "pew" — mid frequency, fast decay.
+    source: SAM/SAMTABLE.ASM:QFIRE
+
+  - event_id: sinibomb_launch
+    description: Player releases a sinibomb.
+    priority: 36
+    duration_ticks: 16
+    looped: false
+    legacy_sound_id: 16
+    waveform_hint: Rising electronic launch sweep.
+    source: SAM/SAMTABLE.ASM:QSFire
+
+  - event_id: sinibomb_detonate
+    description: Sinibomb explodes (impact or auto-detonation).
+    priority: 40
+    duration_ticks: 32
+    looped: false
+    legacy_sound_id: 12
+    waveform_hint: Deep bass explosion with low-frequency rumble.
+    source: SAM/SAMTABLE.ASM:QBANG
+
+  - event_id: warrior_fire
+    description: Warrior fires a projectile at player.
+    priority: 33
+    duration_ticks: 16
+    looped: false
+    legacy_sound_id: 18
+    waveform_hint: Rapid pulse — distinguishable from player_fire.
+    source: SAM/SAMTABLE.ASM:QWFIRE
+
+  - event_id: player_death
+    description: Player ship destroyed.
+    priority: 56
+    duration_ticks: 128
+    looped: false
+    legacy_sound_id: 7
+    waveform_hint: Descending mournful tone with distortion.
+    source: SAM/SAMTABLE.ASM:QPlDie
+
+  - event_id: worker_grab_crystal
+    description: Worker grabs a crystal from a planetoid or in flight.
+    priority: 33
+    duration_ticks: 32
+    looped: false
+    legacy_sound_id: 21
+    waveform_hint: Mid-frequency chirp — pickup tone.
+    source: SAM/SAMTABLE.ASM:QWorkCr
+
+  - event_id: worker_deliver_crystal
+    description: Worker delivers a crystal to Sinistar (assembly progresses).
+    priority: 33
+    duration_ticks: 9
+    looped: false
+    legacy_sound_id: 25
+    waveform_hint: Brief ascending tone — dread-inducing in context.
+    source: SAM/SAMTABLE.ASM:QWorkSi
+
+  - event_id: player_pickup_crystal
+    description: Player ship collects a crystal — adds 1 sinibomb.
+    priority: 33
+    duration_ticks: 32
+    looped: false
+    legacy_sound_id: 28
+    waveform_hint: Bright pickup chime.
+    source: SAM/SAMTABLE.ASM:QPlayCr
+
+  - event_id: extra_ship_awarded
+    description: Player crosses score threshold for a free ship.
+    priority: 56
+    duration_ticks: 32
+    looped: false
+    legacy_sound_id: 3
+    waveform_hint: Celebratory multi-tone arpeggio.
+    source: SAM/SAMTABLE.ASM:QNEWSHI
+
+  - event_id: crystal_flash
+    description: Free-floating crystal ambient flashing pulse.
+    priority: 18
+    duration_ticks: 64
+    looped: true
+    legacy_sound_id: 24
+    waveform_hint: Gentle regular pulse.
+    source: SAM/SAMTABLE.ASM:QCRYFLA
+
+  - event_id: message_alert
+    description: HUD or system message displayed.
+    priority: 33
+    duration_ticks: 48
+    looped: false
+    legacy_sound_id: 1
+    waveform_hint: Clear attention ping.
+    source: SAM/SAMTABLE.ASM:QMesg
+
+  - event_id: turn_start
+    description: New player turn / round begins.
+    priority: 56
+    duration_ticks: 136
+    looped: false
+    legacy_sound_id: 27
+    waveform_hint: Fanfare-like startup theme.
+    source: SAM/SAMTABLE.ASM:QPlStr
+
+  - event_id: game_over
+    description: Game-over sequence.
+    priority: 56
+    duration_ticks: 255
+    looped: false
+    legacy_sound_id: 25
+    waveform_hint: Descending finality tone.
+    source: SAM/SAMTABLE.ASM:QGamEnd
+
+  - event_id: coin_insert
+    description: Coin accepted by cabinet (in cabinet context); also triggers an attract speech in original.
+    priority: 63
+    duration_ticks: 96
+    looped: false
+    legacy_sound_id: 15
+    waveform_hint: In original, coin-insert plays the "I HUNGER" speech as the attention hook.
+    source: SAM/SAMTABLE.ASM:QCOIN
+    modernization: In a remake without coin slots, repurpose as a "credits added" or "new game" cue, or omit.
+
+  - event_id: warrior_alert
+    description: Warrior squadron entering attack range.
+    priority: 28
+    duration_ticks: 16
+    looped: false
+    legacy_sound_id: 4
+    waveform_hint: Sharp metallic alert — rising-then-falling.
+    source: SAM/SAMTABLE.ASM
+    note: Best-effort mapping — verify against warrior spawn/state-change call sites.
+
+  - event_id: thrust
+    description: Player thrust feedback (when engaged).
+    priority: 8
+    duration_ticks: 8
+    looped: true
+    legacy_sound_id: 2
+    waveform_hint: Low-frequency continuous hum scaling with throttle.
+    source: SAM/SAMTABLE.ASM
+    note: Best-effort mapping — may also be associated with the attract-mode tail effect (SAMTAIL).
+
+modernization_notes:
+  - Priorities and durations are reference values. Modern audio engines should
+    use bus mixing and ducking instead of a single priority queue.
+  - The original sound waveforms were synthesized on a 6800 with simple
+    oscillators. A faithful remake can use sample-based audio while preserving
+    the *role* each event plays (alert, feedback, threat).

@@ -1,0 +1,111 @@
+# Wave entity populations — extracted from FALS module.
+# Wave 0 is the tutorial "void zone"; waves 1–4 cycle for repeat play.
+# Difficulty scales over time via the DTime counter (see `difficulty:`).
+
+waves:
+  - id: wave_0
+    name: Void Zone (Tutorial)
+    description: First sector — no warriors. Teaches movement and crystal collection.
+    populations:
+      workers: 0
+      warriors: 0
+      planetoid_1: 10
+      planetoid_2: 2
+      planetoid_3: 2
+      planetoid_4: 2
+      planetoid_5: 2
+      sinistar: 1
+      player_ship: 1
+    source: FALS/N1.ASM:InPop0
+
+  - id: wave_1
+    name: First Combat Zone
+    description: Initial repeating wave — workers and warriors appear.
+    populations:
+      workers: 6
+      warriors: 8
+      planetoid_1: 1
+      planetoid_2: 1
+      planetoid_3: 1
+      planetoid_4: 1
+      planetoid_5: 3
+      sinistar: 1
+      player_ship: 1
+    source: FALS/N1.ASM:InPop1
+
+  - id: wave_2
+    name: Worker Zone
+    description: Heavy worker presence — Sinistar assembles fastest here.
+    populations:
+      workers: 16
+      warriors: 3
+      planetoid_1: 10
+      planetoid_2: 2
+      planetoid_3: 2
+      planetoid_4: 2
+      planetoid_5: 2
+      sinistar: 1
+      player_ship: 1
+    source: FALS/N1.ASM:InPop2
+
+  - id: wave_3
+    name: Warrior Zone
+    description: Warrior-dominated combat sector.
+    populations:
+      workers: 4
+      warriors: 10
+      planetoid_1: 10
+      planetoid_2: 2
+      planetoid_3: 2
+      planetoid_4: 2
+      planetoid_5: 2
+      sinistar: 1
+      player_ship: 1
+    source: FALS/N1.ASM:InPop3
+
+  - id: wave_4
+    name: Planetoid Zone
+    description: Asteroid-dense sector — navigation and bouncing dominate.
+    populations:
+      workers: 6
+      warriors: 8
+      planetoid_1: 16
+      planetoid_2: 2
+      planetoid_3: 16
+      planetoid_4: 2
+      planetoid_5: 5
+      sinistar: 1
+      player_ship: 1
+    source: FALS/N1.ASM:InPop4
+
+cycle:
+  description: After wave 4, the wave sequence cycles starting at wave 1. Difficulty (DTime) does NOT reset — it continues climbing.
+  loop_start: wave_1
+
+difficulty:
+  dtime_increment_per_frame: 6
+  worker_growth_slope: 16
+  warrior_growth_slope: -8
+  warrior_aggression_delta_per_wave: 127
+  operator_difficulty_multiplier_first_zone: 10
+  operator_difficulty_advancement_subsequent_zones: 6
+  pop_array_format: |
+    The population array is 21 bytes = 7 entity types × 3 bytes each.
+    Per type: byte 0 = current count; bytes 1-2 = desired count (16-bit, LSB = fractional).
+    Desired count rises by `slope * (DTime - last_DTime)` each frame; whenever the integer part
+    of desired exceeds current, a new entity spawns (subject to NOBJS cap).
+  difficulty_tables:
+    - DTime
+    - _PWor    # worker target
+    - _PWar    # warrior target
+    - _PPl1    # planetoid type 1 target
+    - _PPl3    # planetoid type 3 target
+    - _PPl5    # planetoid type 5 target
+    - _WAgg    # warrior aggression
+  source: WITT/DIFFICUL.ASM, FALS/N1.ASM, FALS/WASHODDS.ASM
+
+modernization_notes:
+  - The 21-byte packed pop array is a 6809 storage convenience. A modern remake
+    can use a struct-of-floats per entity type with the same growth math.
+  - Operator difficulty is a single integer (1–5) that scales how aggressively
+    DTime climbs and how high `_WAgg` peaks.

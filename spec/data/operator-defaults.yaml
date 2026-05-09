@@ -1,0 +1,132 @@
+# Operator-configurable settings (service menu) and CMOS defaults from the
+# 1983 ROM. Persistence model is documented; modern remakes should map
+# `cmos` to durable storage and `ram_session_only` to in-memory state.
+
+settings:
+  - id: coinage
+    description: Coin slot configuration and credits-per-coin.
+    type: struct
+    default: needs_research
+    persistence: cmos
+    source: MICA/HSTDIM.ASM
+    modernization: A modern remake without coin slots can omit this entirely or repurpose for free-play / arcade-cab modes.
+
+  - id: difficulty_of_play
+    description: Operator difficulty knob. Scales DTime growth and warrior aggression; higher = enemies escalate faster.
+    type: integer
+    range: [1, 5]
+    default: 3
+    default_confidence: best_guess
+    persistence: cmos
+    source: SAM/SAMTABLE.ASM, FALS/N1.ASM
+    cross_ref: populations.yaml#difficulty
+
+  - id: first_extra_ship_at
+    description: Score (in points) for first extra-ship award.
+    type: integer
+    unit: points
+    default: 30000
+    persistence: cmos
+    source: MICA/HSTDIM.ASM
+    note: Original development default was 5,000; raised to 30,000 for shipped ROM. The "ExtraShipFix" mod restores 5,000.
+
+  - id: additional_extra_ship_factor
+    description: Score increment between subsequent extra-ship awards.
+    type: integer
+    unit: points
+    default: 30000
+    persistence: cmos
+    source: MICA/HSTDIM.ASM
+
+  - id: high_score_table_reset
+    description: Operator action that clears CMOS and RAM high-score tables to seed defaults.
+    type: action
+    persistence: cmos
+    source: MICA/HSTDTE.ASM:RSHS
+
+  - id: marquee_display
+    description: Toggle for the marquee title screen in the attract loop.
+    type: bool
+    default: true
+    persistence: cmos
+    source: MICA/MARQUEE.ASM
+
+  - id: operator_message
+    description: Two-line custom operator message displayed during attract.
+    type: string
+    max_length: needs_research
+    default: ""
+    persistence: cmos
+    source: MICA/ATTMSGS.ASM
+
+high_score_defaults:
+  immortals_table:
+    name: SINISTAR Immortals (persistent)
+    entries: 5
+    seed_score: 30000
+    persistence: cmos
+    address_label: CMOSHSC
+    source: MICA/HSTDIM.ASM:HSTDIM
+    note: Survives power cycle. The famous shipped seed names are Williams developer credits.
+
+  survivors_today_table:
+    name: Survivors Today (session)
+    entries: 5
+    seed_score: 10000
+    persistence: ram_session_only
+    address_label: RAMHSC
+    source: MICA/HSTDIM.ASM:HSTDIM
+    note: Resets every power cycle. Encourages return play in a single session.
+
+  initials_configuration:
+    chars_per_entry: 3
+    selectable_characters: A-Z, digits, dash, space
+    source: SAM/MESSAGE.ASM, MICA/HSTDTE.ASM
+
+  score_format:
+    encoding: BCD (4 bytes, 8 digits)
+    max_displayable: 99999999
+    source: MICA/HSTDTE.ASM
+    modernization: Internal storage is implementation-free; preserve the 8-digit display cap.
+
+  default_seed_initials:
+    description: Williams developer credits seeded into the Immortals table at factory reset.
+    entries:
+      - { initials: GOD, score_band: highest }
+      - { initials: KAY, name: "Kay Anderson" }
+      - { initials: HEC, name: "Harry Cline" }
+      - { initials: SAM, name: "Sam Dicker (programmer)" }
+      - { initials: KVD, name: "Kristina Donofrio" }
+      - { initials: "N-F", name: "Noah Falstein (programmer)" }
+      - { initials: KJF, name: "Ken Fedesna" }
+      - { initials: KAG, name: "Ken Graham" }
+      - { initials: FRG, name: "Rich Grande" }
+      - { initials: YAK, name: "Jack Haeger (artist)" }
+      - { initials: JJK, name: "John Kotlarik (speech programmer)" }
+      - { initials: KFL, name: "Ken Lantz" }
+      - { initials: PJM, name: "Pierre Maloka" }
+      - { initials: DOC, name: "Keith McMillen" }
+      - { initials: JLM, name: "John Meissen" }
+      - { initials: "E-Z", name: "Mike Metz (sound programmer)" }
+      - { initials: "=M=", name: "RJ Mical (programmer)" }
+      - { initials: TIM, name: "Tim Murphy" }
+      - { initials: JRN, name: "John Newcomer (game designer)" }
+      - { initials: TOM, name: "Tom O'Meara" }
+      - { initials: PFZ, name: "Bill Pfutzenreuter" }
+      - { initials: RTP, name: "Rudy Plemich" }
+      - { initials: BFD, name: "Dave Rzepka" }
+      - { initials: MBS, name: "Marc Stanis" }
+      - { initials: EJS, name: "Ed Suchocki" }
+      - { initials: STU, name: "Stewart West" }
+      - { initials: WIT, name: "Rich Witt (programmer)" }
+      - { initials: MOM, score_band: lowest }
+    source: MICA/HSTDIM.ASM:HSISUS
+    modernization: A modern remake may seed with its own credits or with neutral defaults; the *gesture* of seeding the table with developer names is part of arcade tradition.
+
+modernization_notes:
+  - CMOS persistence maps to platform-appropriate durable storage (filesystem,
+    cloud sync, etc).
+  - The `coinage` setting is largely obsolete outside of cabinet emulation;
+    a modern remake can hide it under a "cabinet mode" toggle.
+  - Diagnostic / hardware-test menu items (ROM/RAM tests, color bars,
+    switch test, watchdog test) are explicitly *out of scope* for the spec.

@@ -1,0 +1,324 @@
+# Gameplay tunables. Values are extracted from the 1983 ROM source.
+# Units are documented per-row. "raw 6809 units" means the original
+# fixed-point integer; conversion to pixels/seconds is noted where known.
+
+tunables:
+
+  world:
+    - name: max_objects
+      value: 48
+      unit: object_workspaces
+      description: Maximum simultaneous live objects (NOBJS).
+      source: SAM/SAMEQUAT.ASM:NOBJS
+
+    - name: tick_rate_hz
+      value: 60
+      unit: hz
+      description: Master frame/IRQ rate (Williams CRT vertical-blank-locked).
+      source: SAM/IRQ.ASM
+      modernization: Decouple from frame rate; use fixed-step simulation at 60Hz with delta-time render.
+
+    - name: screen_fudge
+      value: 32
+      unit: pixels
+      description: Vertical safety margin to keep sprites away from the raster beam (FUDGE).
+      source: SAM/SAMEQUAT.ASM:FUDGE
+      modernization: Hardware artifact — irrelevant on modern displays.
+
+    - name: scroll_top
+      value: 108
+      unit: pixels
+      description: Top scroll boundary inside the viewport (THSCROL).
+      source: SAM/SAMEQUAT.ASM:THSCROL
+
+    - name: scroll_bottom
+      value: 8
+      unit: pixels
+      description: Bottom scroll boundary inside the viewport (BHSCROL).
+      source: SAM/SAMEQUAT.ASM:BHSCROL
+
+    - name: scroll_left
+      value: 16
+      unit: pixels
+      description: Left scroll boundary inside the viewport (LHSCROL).
+      source: SAM/SAMEQUAT.ASM:LHSCROL
+
+    - name: scroll_right
+      value: 240
+      unit: pixels
+      description: Right scroll boundary inside the viewport (RHSCROL).
+      source: SAM/SAMEQUAT.ASM:RHSCROL
+
+    - name: scroll_damping_time
+      value: 64
+      unit: frames
+      description: Damping window for camera follow ease-out.
+      source: SAM/SAMEQUAT.ASM
+
+    - name: scanner_l_scale
+      value: 24
+      unit: world_pixels_per_scanner_cell
+      description: Horizontal world-to-scanner scale.
+      source: SAM/SCANNER.ASM
+
+    - name: scanner_s_scale
+      value: 12
+      unit: world_pixels_per_scanner_cell
+      description: Vertical world-to-scanner scale.
+      source: SAM/SCANNER.ASM
+
+  sinistar:
+    - name: max_orbit_radius
+      value: 12
+      unit: orbit_factor
+      description: Initial orbit factor when Sinistar begins approaching the player (MaxSinOrbit). Decreases over time as Sinistar closes in.
+      source: WITT/SYMRICH.ASM:MaxSinOrbit
+
+    - name: orbit_shrink_per_frame
+      value: 1
+      unit: orbit_factor_per_frame
+      description: Sinistar's orbit shrinks by this amount each frame while approaching.
+      source: WITT/SINI.ASM
+      note: Shrinks fully on-screen until reaching 3/4 of MaxSinOrbit, then continues shrinking off-screen.
+
+    - name: pieces_required
+      value: 4
+      unit: pieces
+      description: Number of sinibomb hits required to destroy a fully-assembled Sinistar.
+      source: WITT/COLLISIO.ASM
+      note: Distinct from the visual skull-piece assembly that builds Sinistar from worker crystal deliveries.
+
+    - name: assembly_pieces
+      value: 20
+      unit: pieces
+      description: Number of crystals workers must deliver to fully assemble Sinistar.
+      source: WITT/SINI.ASM, FALS/N1.ASM
+      note: Best-effort — verify against piece-count tracking RAM.
+
+    - name: sprite_height
+      value: 26
+      unit: pixels
+      description: Sinistar sprite height (SINIHIG).
+      source: SAM/SAMEQUAT.ASM:SINIHIG
+
+    - name: sprite_width
+      value: 49
+      unit: pixels
+      description: Sinistar sprite width (SINIWID).
+      source: SAM/SAMEQUAT.ASM:SINIWID
+
+    - name: mouth_offset_long
+      value: 25
+      unit: pixels
+      description: Horizontal offset from sprite origin to mouth (SINILCE).
+      source: SAM/SAMEQUAT.ASM:SINILCE
+
+    - name: mouth_offset_short
+      value: 24
+      unit: pixels
+      description: Vertical offset from sprite origin to mouth (SINISCE).
+      source: SAM/SAMEQUAT.ASM:SINISCE
+
+    - name: lipsync_offset
+      value: 412
+      unit: pixels
+      description: Encoded offset (SINLP) used during lipsync animation distance calculations to prevent false collisions while mouth is animating.
+      source: WITT/LSSINI.ASM:SINLP
+
+    - name: warp_velocity
+      value: 256
+      unit: raw_6809_velocity
+      description: Player warp-out velocity after destroying Sinistar (WarpVel).
+      source: WITT/SYMRICH.ASM:WarpVel
+
+  warrior:
+    - name: attack_orbit_radius
+      value: 10
+      unit: orbit_factor
+      description: Orbit factor warriors maintain when attacking the player (AORBIT).
+      source: WITT/SYMRICH.ASM:AORBIT
+
+    - name: shooting_inhibitor_max
+      value: 15
+      unit: frames
+      description: Cooldown frames between warrior shots; counts down only while warrior is on-screen and within scroll bounds (PWaShIn 4-bit field).
+      source: WITT/SYMRICH.ASM
+      note: Off-screen warriors do not advance the cooldown — this prevents off-screen barrages.
+
+    - name: turret_image_count
+      value: 8
+      unit: animation_frames
+      description: Number of warrior turret aim angles.
+      source: WITT/SYMRICH.ASM
+
+    - name: formation_angle_2_ship
+      value: [128]
+      unit: degrees_circle256
+      description: Wing offset for a 2-warrior squadron (CIRCLE=256). One warrior at +128° from leader.
+      source: WITT/AIMWARR.ASM
+
+    - name: formation_angle_3_ship
+      value: [128, 192]
+      unit: degrees_circle256
+      description: Wing offsets for a 3-warrior squadron.
+      source: WITT/AIMWARR.ASM
+
+    - name: formation_angle_4_ship
+      value: [128, 192, 160]
+      unit: degrees_circle256
+      description: Wing offsets for a 4-warrior squadron.
+      source: WITT/AIMWARR.ASM
+
+    - name: formation_angle_5_ship
+      value: [128, 128, 128, 128]
+      unit: degrees_circle256
+      description: Wing offsets for a 5-warrior squadron (paired opposites).
+      source: WITT/AIMWARR.ASM
+
+  worker:
+    - name: drift_orbit_radius
+      value: 2
+      unit: orbit_factor
+      description: Loose drift orbit (DORBIT).
+      source: WITT/SYMRICH.ASM:DORBIT
+
+    - name: inner_orbit_radius
+      value: 6
+      unit: orbit_factor
+      description: Inner mining orbit (IORBIT).
+      source: WITT/SYMRICH.ASM:IORBIT
+
+    - name: pickup_orbit_radius
+      value: 8
+      unit: orbit_factor
+      description: Outer pickup orbit (OORBIT = IORBIT * 4/3).
+      source: WITT/SYMRICH.ASM:OORBIT
+
+    - name: sinistar_delivery_orbit
+      value: 32
+      unit: scanner_cells
+      description: Orbit radius around Sinistar while a worker carries a crystal toward it (SOrbit).
+      source: WITT/SYMRICH.ASM:SOrbit
+
+    - name: crystal_delivery_tolerance
+      value: 4
+      unit: pixels
+      description: Distance to Sinistar mouth at which crystal delivery triggers (encoded as 0xFC mask).
+      source: WITT/WORKER.ASM
+
+    - name: animation_frame_count
+      value: 16
+      unit: frames
+      description: Total worker animation poses (NIWORKER).
+      source: WITT/SYMRICH.ASM
+
+    - name: crystal_catch_distance
+      value: 12
+      unit: scanner_cells
+      description: Off-screen worker crystal-grab range (CryDis).
+      source: FALS/N1SYM.ASM:CryDis
+
+    - name: crystal_catch_probability
+      value: 0.6
+      unit: probability_per_second
+      description: Off-screen probability of a worker grabbing a tossed crystal (CatPrb = 60/100).
+      source: FALS/N1SYM.ASM:CatPrb
+
+    - name: mining_distance
+      value: 32
+      unit: scanner_cells
+      description: Stand-off distance from a planetoid while mining (MinDis).
+      source: FALS/N1SYM.ASM:MinDis
+
+    - name: mining_probability
+      value: 0.69
+      unit: probability_per_second
+      description: Per-second probability that an idle worker chooses a planetoid to mine (MinPrb = 176/255).
+      source: FALS/N1SYM.ASM:MinPrb
+
+    - name: swarm_probability
+      value: 0.063
+      unit: probability_per_4_seconds
+      description: Per-4-second probability of a swarm trigger (SwrPrb = 16/255 ≈ 1/minute).
+      source: FALS/N1SYM.ASM:SwrPrb
+
+  planetoid:
+    - name: vibration_max
+      value: 96
+      unit: richter_units
+      description: Vibration threshold; planetoid shatters at this value (RchMax).
+      source: FALS/N1SYM.ASM:RchMax
+
+    - name: vibration_damp_per_frame
+      value: 2
+      unit: richter_units_per_frame
+      description: Vibration decay per frame (VibDamp).
+      source: FALS/N1SYM.ASM:VibDamp
+
+    - name: missile_vibration_add
+      value: 16
+      unit: richter_units
+      description: Vibration added per sinibomb impact (MisVib).
+      source: FALS/N1SYM.ASM:MisVib
+
+    - name: crystal_toss_probability
+      value: 0.063
+      unit: probability_per_frame
+      description: Per-frame chance to eject a crystal while vibrating (CryProb = 16/255).
+      source: FALS/N1SYM.ASM:CryProb
+
+    - name: crystal_toss_damping
+      value: 10
+      unit: damping_factor
+      description: Velocity damping applied to ejected crystals (CryDamp).
+      source: FALS/N1SYM.ASM:CryDamp
+
+    - name: crystal_max_age
+      value: 10
+      unit: seconds
+      description: Lifespan of a free-floating crystal before despawning (MaxCrA).
+      source: FALS/N1SYM.ASM:MaxCrA
+
+  sinibomb:
+    - name: max_in_bay
+      value: 20
+      unit: bombs
+      description: Maximum sinibombs the player can hold (MAXBOMB).
+      source: WITT/SYMSAM.ASM:MAXBOMB
+
+    - name: detonation_distance
+      value: 80
+      unit: pixels
+      description: Off-screen sinibomb auto-detonates when both axis distances to Sinistar fall below this (SinDis).
+      source: WITT/SYMRICH.ASM:SinDis
+
+  player:
+    - name: joystick_directions
+      value: 49
+      unit: discrete_directions
+      description: Williams 49-way joystick — finer than 8-way; gives near-analog feel for momentum control.
+      source: SAM/EXEC.ASM
+      modernization: Map to analog stick or mouse-aim equivalent. The "49-way" is a hardware artifact; the *feel* is what matters.
+
+    - name: shot_image_count
+      value: 32
+      unit: animation_frames
+      description: Player shot animation frames (NIPLSHOT).
+      source: WITT/SYMRICH.ASM
+
+    - name: warrior_shot_image_count
+      value: 32
+      unit: animation_frames
+      description: Warrior shot animation frames (NIWASHOT).
+      source: WITT/SYMRICH.ASM
+
+    - name: sinibomb_image_count
+      value: 3
+      unit: animation_frames
+      description: Sinibomb in-flight frames (NISBOMB).
+      source: WITT/SYMRICH.ASM
+
+modernization_notes:
+  - Hardware artifacts (raster timing, FUDGE, blitter constraints, watchdog stroking, CMOS quirks) should not be reimplemented.
+  - Orbit "factors" are abstract scaling values; treat as design-tunable in the remake.
+  - The 49-way joystick reading is preserved as a *feel* spec, not a mandate to emulate Williams hardware.

@@ -1,0 +1,45 @@
+# Sinistar scoring events. Values reflect the shipped 1983 ROM.
+# Operator-adjustable bonuses (extra-ship thresholds) live in operator-defaults.yaml.
+
+scoring:
+  - event_id: destroy_sinistar
+    points: 15000
+    trigger: Player destroys the fully-assembled Sinistar with sinibombs.
+    source: WITT/COLLISIO.ASM
+
+  - event_id: destroy_sinistar_piece
+    points: 500
+    trigger: Player shoots a Sinistar skull piece while it is in transit (not yet attached).
+    source: WITT/COLLISIO.ASM
+
+  - event_id: kill_warrior
+    points: 500
+    trigger: Player shot or sinibomb kills a warrior.
+    source: WITT/COLLISIO.ASM
+
+  - event_id: kill_worker
+    points: 150
+    trigger: Player shot or sinibomb kills a worker (with or without crystal).
+    source: WITT/COLLISIO.ASM
+
+  - event_id: kill_warrior_shot
+    points: 100
+    trigger: Player shot intercepts an in-flight warrior shot.
+    source: WITT/COLLISIO.ASM
+
+  - event_id: collect_crystal
+    points: 200
+    trigger: Player ship collides with a free-floating crystal (also adds 1 sinibomb to bay).
+    source: WITT/COLLISIO.ASM
+
+  - event_id: destroy_planetoid
+    points: 5
+    trigger: Planetoid shatters from cumulative damage (sinibomb impact, accumulated player shots, or self-vibration overflow).
+    source: WITT/COLLISIO.ASM
+    note: The points value is intentionally trivial — planetoids exist as obstacles and crystal sources, not score targets.
+
+  - event_id: bonus_extra_ship
+    points: 0
+    trigger: Score crosses operator-configured extra-ship threshold (default 30,000; subsequent every 30,000). Awards one ship and plays extra-ship jingle.
+    source: SAM/ADDSCOR.ASM
+    cross_ref: operator-defaults.yaml#first_extra_ship_at, operator-defaults.yaml#additional_extra_ship_factor

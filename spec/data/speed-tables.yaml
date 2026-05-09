@@ -1,0 +1,195 @@
+# AI speed tables — distance-to-target → desired speed + acceleration profile.
+# Each AI entity selects a table based on its current mission and reads the
+# row whose `distance` is the largest value <= current distance to target.
+
+unit_notes:
+  distance_units: |
+    Pixels in world space. Note: original 6809 code stores some distances
+    left-shifted (×8) for fixed-point precision; values here are in pixels
+    after that shift is undone.
+  speed_units: |
+    Original "nano-pixel per 16ms tick" units. To approximate pixels/frame
+    at 60Hz: divide by 16 (rough). Treat as relative tunables — the *shape*
+    of each table (band ratios) matters more than absolute units.
+  accel_routines:
+    - asrd0
+    - asrd1
+    - asrd2
+    - asrd3
+    - asrd4
+    - asrd5
+  accel_routine_meaning:
+    asrd0: No acceleration — instant snap to target speed
+    asrd1: 1/128 of velocity delta per frame — extremely lazy
+    asrd2: 1/64 of velocity delta per frame — slow
+    asrd3: 1/32 of velocity delta per frame — moderate
+    asrd4: 1/16 of velocity delta per frame — quick
+    asrd5: 1/8 of velocity delta per frame — snappy
+
+tables:
+  - id: stbl_worker
+    name: Worker drift / intercept
+    used_by: Worker AI in DRIFT, TAIL, INTERCEPT missions
+    rows:
+      - { distance: 6144, speed: 1040, accel: asrd3 }
+      - { distance: 3200, speed:  672, accel: asrd2 }
+      - { distance: 1536, speed:  400, accel: asrd1 }
+      - { distance: 1280, speed:  384, accel: asrd1 }
+      - { distance: 1024, speed:  352, accel: asrd1 }
+      - { distance:  768, speed:  288, accel: asrd1 }
+      - { distance:  512, speed:  192, accel: asrd1 }
+      - { distance:  256, speed:  112, accel: asrd3 }
+      - { distance:    0, speed:   48, accel: asrd4 }
+    source: WITT/STBLWORK.ASM:stblworker
+
+  - id: stbl_warrior_flypast
+    name: Warrior plan 0 — fly-past
+    used_by: Warrior squadron member executing a fly-past attack
+    rows:
+      - { distance: 4000, speed: 4095, accel: asrd2 }
+      - { distance:   80, speed:  768, accel: asrd3 }
+      - { distance:   64, speed:  704, accel: asrd3 }
+      - { distance:   48, speed:  576, accel: asrd2 }
+      - { distance:   32, speed:  512, accel: asrd2 }
+      - { distance:   16, speed:  256, accel: asrd1 }
+      - { distance:    8, speed:  128, accel: asrd1 }
+      - { distance:    0, speed:    0, accel: asrd0 }
+    source: WITT/STBLW0.ASM:stblW0
+
+  - id: stbl_warrior_intercept
+    name: Warrior plan 1 — intercept
+    used_by: Warrior intercepting player on direct heading
+    rows:
+      - { distance: 32767, speed: 4095, accel: asrd3 }
+      - { distance:   512, speed: 1104, accel: asrd4 }
+      - { distance:   256, speed:  965, accel: asrd4 }
+      - { distance:   128, speed:  800, accel: asrd3 }
+      - { distance:    64, speed:  512, accel: asrd3 }
+      - { distance:    32, speed:  384, accel: asrd2 }
+      - { distance:    16, speed:  224, accel: asrd2 }
+      - { distance:     0, speed:  144, accel: asrd1 }
+    source: WITT/STBLW1.ASM:stblW1
+
+  - id: stbl_warrior_leader
+    name: Warrior plan — squadron leader
+    used_by: Squadron leader directing fly-past formation
+    rows:
+      - { distance: 1536, speed: 1040, accel: asrd3 }
+      - { distance:    0, speed:  768, accel: asrd4 }
+    source: WITT/STBLL0.ASM:stblL0
+
+  - id: stbl_warrior_miner
+    name: Warrior plan — mining run
+    used_by: Warrior approaching planetoid to mine; backs off below MineDist
+    rows:
+      - { distance: 1024, speed: 4095, accel: asrd4 }
+      - { distance:  296, speed:  768, accel: asrd4 }
+      - { distance:  136, speed:  512, accel: asrd4 }
+      - { distance:   64, speed:  256, accel: asrd3 }
+      - { distance:   40, speed:  128, accel: asrd3 }
+      - { distance:   24, speed:    0, accel: asrd2 }
+      - { distance:    8, speed:    0, accel: asrd1 }
+      - { distance:    0, speed:  -16, accel: asrd4 }
+    source: WITT/STBLMINE.ASM:stblminer
+    note: Negative speed = reverse thrust; below MineDist warrior backs away.
+
+  - id: stbl_warrior_guard
+    name: Warrior plan — guard / impulse
+    used_by: Warrior defending an orbit position
+    rows:
+      - { distance: 32767, speed: 8191, accel: asrd3 }
+      - { distance:   200, speed:  256, accel: asrd5 }
+      - { distance:   100, speed:  144, accel: asrd3 }
+      - { distance:    64, speed:  144, accel: asrd1 }
+      - { distance:    48, speed:   96, accel: asrd2 }
+      - { distance:    32, speed:   64, accel: asrd1 }
+      - { distance:    16, speed:   24, accel: asrd1 }
+      - { distance:     0, speed:    0, accel: asrd0 }
+    source: WITT/STBLIMP.ASM:stblimpulse
+
+  - id: stbl_worker_intercept
+    name: Worker — intercept (no crystal)
+    used_by: Worker pursuing target without a crystal
+    rows:
+      - { distance: 1536, speed: 1040, accel: asrd3 }
+      - { distance:   80, speed:  768, accel: asrd4 }
+      - { distance:   64, speed:  704, accel: asrd4 }
+      - { distance:   48, speed:  576, accel: asrd3 }
+      - { distance:   32, speed:  512, accel: asrd3 }
+      - { distance:    8, speed:  256, accel: asrd2 }
+      - { distance:    0, speed:  192, accel: asrd1 }
+    source: WITT/STBLINT.ASM:stblintercept
+
+  - id: stbl_worker_heavy
+    name: Worker — carrying crystal
+    used_by: Worker delivering a crystal to Sinistar (slower / harder to deflect)
+    rows:
+      - { distance: 1536, speed: 1040, accel: asrd3 }
+      - { distance:   48, speed:  576, accel: asrd4 }
+      - { distance:   32, speed:  512, accel: asrd3 }
+      - { distance:    8, speed:  256, accel: asrd2 }
+      - { distance:    0, speed:  128, accel: asrd1 }
+    source: WITT/STBLHEAV.ASM:stblheavy
+
+  - id: stbl_sinibomb
+    name: Sinibomb — direct homing
+    used_by: Sinibomb in active homing flight toward Sinistar
+    rows:
+      - { distance: 4000, speed: 32767, accel: asrd3 }
+      - { distance:  512, speed:  4352, accel: asrd4 }
+      - { distance:  128, speed:  1536, accel: asrd3 }
+      - { distance:   64, speed:  1024, accel: asrd3 }
+      - { distance:   32, speed:   512, accel: asrd3 }
+      - { distance:   16, speed:   256, accel: asrd2 }
+      - { distance:    8, speed:   192, accel: asrd1 }
+      - { distance:    0, speed:    64, accel: asrd0 }
+    source: WITT/STBLSBOM.ASM:stblsbomb
+
+  - id: stbl_sinibomb_orbit
+    name: Sinibomb — orbital approach
+    used_by: Sinibomb on indirect orbital trajectory
+    rows:
+      - { distance: 32767, speed: 8191, accel: asrd3 }
+      - { distance:   100, speed:  256, accel: asrd1 }
+      - { distance:    64, speed:  192, accel: asrd1 }
+      - { distance:    32, speed:  160, accel: asrd1 }
+      - { distance:    16, speed:  128, accel: asrd0 }
+      - { distance:     0, speed:    0, accel: asrd0 }
+    source: WITT/STBLBOMB.ASM:stblbomber
+
+  - id: stbl_sinistar_chase
+    name: Sinistar — chase
+    used_by: Sinistar AI hunting the player on direct heading
+    rows:
+      - { distance: 32767, speed: 2047, accel: asrd5 }
+      - { distance:  4000, speed: 1024, accel: asrd4 }
+      - { distance:  1024, speed:  128, accel: asrd1 }
+      - { distance:   600, speed:  320, accel: asrd5 }
+      - { distance:    80, speed:  256, accel: asrd3 }
+      - { distance:    64, speed:  192, accel: asrd4 }
+      - { distance:    32, speed:  128, accel: asrd4 }
+      - { distance:    16, speed:   96, accel: asrd3 }
+      - { distance:     0, speed:   64, accel: asrd2 }
+    source: WITT/STBLSINI.ASM:STBLSinistar
+    note: Non-monotonic speed curve — "winding up" effect at medium range gives the iconic feeling of Sinistar surging forward.
+
+  - id: stbl_sinistar_orbit
+    name: Sinistar — orbital approach
+    used_by: Sinistar AI when out-of-sector or approaching obliquely
+    rows:
+      - { distance: 32767, speed: 8191, accel: asrd3 }
+      - { distance:   100, speed:  512, accel: asrd4 }
+      - { distance:    48, speed:  448, accel: asrd3 }
+      - { distance:    40, speed:  368, accel: asrd3 }
+      - { distance:    32, speed:  328, accel: asrd3 }
+      - { distance:    24, speed:  248, accel: asrd2 }
+      - { distance:    16, speed:  128, accel: asrd2 }
+      - { distance:     8, speed:   48, accel: asrd1 }
+      - { distance:     4, speed:    0, accel: asrd1 }
+      - { distance:     0, speed:    0, accel: asrd0 }
+    source: WITT/STBLOSIN.ASM:STblOSini
+
+modernization_notes:
+  - These tables describe *target* speeds; the accel row controls how aggressively the entity reaches them.
+  - For a remake, treat tables as data assets — load from this YAML, interpolate between rows for smoother behavior if desired.
+  - The non-monotonic Sinistar chase curve is intentional gameplay character; preserve it.

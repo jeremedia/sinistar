@@ -1,0 +1,118 @@
+# Sinistar voice catalog. The *content* of these lines is canonical and must
+# be preserved in any faithful remake. The *waveforms* (1983 CVSD-encoded) are
+# reinterpretable — voice acting, tone, and processing can be redesigned.
+
+queue_rules:
+  description: |
+    Speech is priority-queued. Higher priorities can interrupt lower ones.
+    Sinistar speaks only when alive AND (on-screen OR in active logic phase
+    while out-of-sector). Speech is suppressed while the player is dying
+    (DeaTime != 0). The "silence" command (legacy ID 10) flushes the queue.
+  priority_field_size_bits: 8
+  silence_command_legacy_id: 10
+  modernization: |
+    Use a single dedicated voice channel with ducking against SFX. Honor the
+    suppression rule (no speech during player death) — it's a deliberate
+    pacing choice that keeps the death sting clean.
+
+# Phrase priorities below are best-effort from call-sites. Higher = more urgent.
+# Standard hunting taunts run ~3A; attract/spawn lines run ~3C.
+
+lines:
+  - id: i_am_sinistar
+    text: I AM SINISTAR
+    priority: 0x3C
+    triggers:
+      - Sinistar power-on / attract-mode introduction
+      - Sinistar assembly begins in a new sector
+    duration_frames_approx: 90
+    source: SPEECH.ASM:Phrase1, WITT/SPEAK.ASM
+
+  - id: beware_i_live
+    text: BEWARE, I LIVE
+    priority: 0x3C
+    triggers:
+      - Sinistar fully assembled (Finish == Alive); the boss-is-active stinger
+    duration_frames_approx: 75
+    source: SPEECH.ASM:Phrase2, WITT/SPEAK.ASM
+
+  - id: i_hunger
+    text: I HUNGER
+    priority: 0x3A
+    triggers:
+      - Sinistar incomplete and crystals are being delivered (assembly progressing)
+      - Coin insert (attract-mode hook)
+    duration_frames_approx: 60
+    source: SPEECH.ASM:Phrase3, WITT/SPEAK.ASM
+
+  - id: beware_coward
+    text: BEWARE, COWARD
+    priority: 0x3A
+    triggers:
+      - Player avoiding engagement after Sinistar is alive
+    duration_frames_approx: 70
+    source: SPEECH.ASM:Phrase4, WITT/SPEAK.ASM
+
+  - id: run_coward
+    text: RUN, COWARD!
+    priority: 0x3A
+    triggers:
+      - Sinistar in active pursuit of player
+    duration_frames_approx: 65
+    source: SPEECH.ASM:Phrase5, WITT/SPEAK.ASM
+
+  - id: run_run_run
+    text: RUN, RUN, RUN!
+    priority: 0x3A
+    triggers:
+      - Sinistar imminent threat — player is in immediate danger of bite
+    duration_frames_approx: 70
+    source: SPEECH.ASM:Phrase6, WITT/SPEAK.ASM
+
+  - id: i_hunger_coward
+    text: I HUNGER, COWARD!
+    priority: 0x3A
+    triggers:
+      - Aggressive feeding state — Sinistar pursuing while incomplete
+    duration_frames_approx: 85
+    source: SPEECH.ASM:Phrase7, WITT/SPEAK.ASM
+
+  - id: roar
+    text: (roar — "EEERRAAURGH")
+    priority: 0x3B
+    triggers:
+      - Sinistar passes near player without biting
+      - Sinistar critical-state escalation
+    duration_frames_approx: 120
+    source: SPEECH.ASM:ROAR
+    note: A non-verbal but iconic vocalization. Can override regular speech in critical moments.
+
+  - id: silence
+    text: (silence)
+    priority: 0xFF
+    triggers:
+      - Demo mode start
+      - Player death (forces speech queue flush)
+      - End-of-game cleanup
+    duration_frames_approx: 0
+    source: SPEECH.ASM
+    note: Mute command — flushes the speech queue.
+
+speech_technical:
+  encoding_original: CVSD (Continuously Variable Slope Delta Modulation)
+  rom_layout: Speech ROMs at $B000-$EFFF (4 × 4KB)
+  programmer_credit: John Kotlarik (1982)
+  modernization: |
+    Replace with high-quality voice acting + audio processing. The line text
+    is canon; the *delivery* (creepy, distorted, deliberate cadence) defines
+    the character of Sinistar more than any other single element. Treat the
+    voice as the lead "instrument" of the soundtrack.
+
+design_notes:
+  - Sinistar has more lines than most arcade game protagonists ever had — the
+    voice is the game's primary fear vector.
+  - Lines escalate in aggression as Sinistar closes on the player. Preserve
+    this escalation curve.
+  - The COWARD lines are taunts for the player who flees. The HUNGER lines
+    are when Sinistar wants more crystals delivered. Maintain this semantic
+    split; do not blur the trigger conditions.
