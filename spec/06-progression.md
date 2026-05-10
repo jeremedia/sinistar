@@ -20,8 +20,10 @@ Wave populations are in `populations.yaml`:
 
 ## Sector advance
 
-A sector ends when the player **destroys Sinistar** (4 sinibomb hits). After
-the destruction:
+A sector ends when the player **destroys Sinistar**. A fully-assembled
+Sinistar requires `tunables.yaml#pieces_required = 12` sinibomb hits; each
+hit removes one body piece, and destruction triggers when the body-piece
+counter reaches zero. After the destruction:
 
 1. Sinistar shatters (`02-entities.md#Sinistar` dying state).
 2. Player warps off-screen (`04-player.md#Ship warp`).
@@ -87,7 +89,8 @@ Within a single sector, the typical arc is:
    `beware_i_live`. Warriors more aggressive. Player must have stockpiled
    sinibombs.
 4. **60+ seconds:** Sinistar alive and chasing. Player has limited window
-   to land 4 sinibombs while evading bite, warriors, and worker attrition.
+   to land enough sinibombs to strip all remaining body pieces while evading
+   bite, warriors, and worker attrition.
 
 Time-to-Sinistar varies with wave (worker count) and difficulty. The above
 is a rough envelope, not a strict timer — the game's clock is the

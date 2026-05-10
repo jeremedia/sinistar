@@ -435,3 +435,30 @@ These remain "needs_research" or "best-effort" in the YAML:
 - The `BargraphEnable` / `WittRock` / debug-utilities code paths are
   out of canon scope but contain unused-but-interesting design
   fragments. Not extracted.
+
+## Fourth-pass final consistency corrections
+
+These corrections were made before using this spec as the faithful 2D
+mechanics reference for the VR adaptation workstream.
+
+### 26. Progression/game-flow stale 4-hit prose — **Corrected**
+
+The second and third passes corrected Sinistar HP to **12 sinibomb hits**
+for a fully-assembled Sinistar, but two gameplay-flow prose references still
+said 4 hits:
+
+- `06-progression.md` sector advance and pacing text.
+- `08-game-flow.md` gameplay termination bullet.
+
+Both now reference the source-backed `tunables.yaml#pieces_required = 12`
+body-piece counter and avoid reintroducing the old 4-hit prototype value.
+
+### 27. Entity score values for Sinistar pieces and warriors — **Corrected**
+
+`data/entities.yaml` still listed `score_value: 000` for:
+
+- `sinistar_piece`
+- `warrior`
+
+This contradicted `07-scoring.md`, `data/scoring.yaml`, and the verified
+`addscore` call sites recorded above. Both now use `score_value: 500`.
