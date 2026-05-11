@@ -150,7 +150,9 @@ A remake should ignore them entirely.
 - CMOS battery-backed RAM specifically (any persistent storage works)
 - TMS5220-style speech synthesis specifically (any audio works)
 - ROM/RAM diagnostic tests, color bar test, switch test
-- 60Hz raster lock (modern displays handle frame timing differently)
+- 60Hz raster lock specifically — modern displays handle frame timing
+  differently. The simulation rate (`tunables.yaml#tick_rate_hz`) is
+  the canonical 60Hz value; raster lock is hardware artifact.
 - The DMA-driven sprite scheduler
 
 ## Modernization recommendations

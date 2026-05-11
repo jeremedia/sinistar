@@ -95,7 +95,7 @@ See `04-player.md` for input, firing, and lives detail.
 
 ## Sinibomb
 
-**Role:** the only weapon that kills Sinistar. Player launches one; it homes in on Sinistar. Each Sinistar contact destroys one body piece (+500), stuns Sinistar for 2 frames, and consumes the bomb. Worker / warrior / planetoid contacts also kill the bomb and the target. **No area-of-effect** — each sinibomb collides with exactly one target. The player carries up to `tunables.yaml#max_in_bay = 20` sinibombs; each crystal collected via direct ship contact adds one.
+**Role:** the only weapon that kills Sinistar. Player launches one; it homes in on Sinistar. Each Sinistar contact destroys one body piece (`scoring.yaml#destroy_sinistar_piece`), stuns Sinistar for `tunables.yaml#stun_per_hit_frames` frames, and consumes the bomb. Worker / warrior / planetoid contacts also kill the bomb and the target. **No area-of-effect** — each sinibomb collides with exactly one target. The player carries up to `tunables.yaml#max_in_bay = 20` sinibombs; each crystal collected via direct ship contact adds one.
 
 **Visual identity:** Larger than a player shot, slower, visibly homing. Should be readable as "this is the answer to Sinistar."
 

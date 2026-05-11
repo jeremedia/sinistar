@@ -581,6 +581,48 @@ These remain "needs_research" or "best-effort" in the YAML:
   out of canon scope but contain unused-but-interesting design
   fragments. Not extracted.
 
+## Fifth-pass — automating drift prevention (post-review)
+
+After the reviewer caught stale narrative numerics for a *second* time
+(finding #32, stale "4 sinibomb hits" prose in two chapters), the
+review-then-fix loop was clearly not catching the same class of error.
+Two-and-a-half reviews to find every stale prose number is too many.
+
+Added `verification/numeric_drift_check.py`:
+
+- For each load-bearing concept (Sinistar HP, scoring values, bay
+  capacity, tick rate, extra-ship thresholds, vibration constants,
+  Sinistar stun, warrior cooldown), defines a `(label, regex, yaml_ref)`
+  triple.
+- Scans every prose chapter for matches of the regex outside fenced
+  code blocks.
+- Requires the corresponding `yaml_ref` to appear within ±12 lines
+  of each match.
+- Reports any unresolved match as a violation.
+- Supports per-chapter exemptions for legitimate historical references
+  (e.g., "originally $05 in SAM/DEFAULT.SRC", "≥4 needed in the
+  original [attract demo]").
+
+Running this against the post-review spec surfaced 24 bare numeric
+claims that had no nearby YAML citation; all were updated to cite the
+appropriate `data/*.yaml#id`. The tool now exits clean.
+
+The verification README documents a recommended pre-commit pair:
+
+```sh
+python3 verification/coverage_check.py && \
+python3 verification/numeric_drift_check.py
+```
+
+These two together enforce both directions of the invariant: every
+prose YAML reference resolves to a record, and every numeric claim
+in prose either cites a YAML record or is explicitly exempt.
+
+This is the structural fix for the regression class that took out
+findings #20, #23, #26, and #32. The next pass should not see another
+stale narrative numeric — and if it does, that finding can be added
+as a new regex to the drift check so it can never recur silently.
+
 ## Fourth-pass final consistency corrections (reviewer follow-up)
 
 Two additional regressions caught by the reviewer after the consolidated

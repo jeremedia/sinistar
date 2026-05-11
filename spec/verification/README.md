@@ -15,6 +15,13 @@ implement Sinistar 2026.
 - [`coverage_check.py`](coverage_check.py) — walks every prose chapter
   and confirms each `data/*.yaml#id` reference resolves. Run with
   `python3 verification/coverage_check.py` from `spec/`.
+- [`numeric_drift_check.py`](numeric_drift_check.py) — flags **bare
+  numeric claims in prose that should cite a YAML record**. Caught by
+  reviewers twice (stale "4 sinibomb hits" prose, stale "5 points
+  planetoid" prose) before the harness existed. Run it **before any
+  commit** that changes a tunable value, score value, or wave
+  population — if the YAML changes and a stale narrative claim
+  drifts, this is what catches it.
 - [`warrior_formation.py`](warrior_formation.py) — derives a 4-warrior
   squadron's positions around a leader using only `tunables.yaml`
   formation angles. Verifies the spec's geometry math.
@@ -52,9 +59,24 @@ Then run the scripts from the spec/ directory:
 ```sh
 cd spec
 python3 verification/coverage_check.py
+python3 verification/numeric_drift_check.py
 python3 verification/warrior_formation.py
 python3 verification/planetoid_loop.py
 python3 verification/sinistar_chase.py
 ```
 
 All scripts are pure Python 3.
+
+### Recommended pre-commit guard
+
+Before any commit touching `data/*.yaml` or a prose chapter, run:
+
+```sh
+python3 verification/coverage_check.py && \
+python3 verification/numeric_drift_check.py
+```
+
+Both must exit 0. Together they enforce: every YAML reference in prose
+resolves to a record, and every numeric claim in prose either cites
+the YAML record it derives from or is explicitly exempt as a
+historical / prototype mention.

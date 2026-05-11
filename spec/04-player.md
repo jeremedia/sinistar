@@ -67,7 +67,10 @@ The player starts each game with a configured number of ships. The factory
 default is **3** (`SAM/TB13.ASM:DEFALT` "SHIPS PER GAME" = `$03`). See
 `operator-defaults.yaml#ships_per_game`.
 
-**Earning extra ships:** see `07-scoring.md` and `operator-defaults.yaml#first_extra_ship_at`. Default: first extra at 30,000 points; subsequent every 30,000 points (operator-adjustable).
+**Earning extra ships:** see `07-scoring.md` and
+`operator-defaults.yaml#first_extra_ship_at` (default 30,000 points for
+the first extra) and `operator-defaults.yaml#additional_extra_ship_factor`
+(default every 30,000 points thereafter). Both operator-adjustable.
 
 **Losing a ship (verified against `WITT/COLLISIO.ASM`):**
 

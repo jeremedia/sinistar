@@ -124,9 +124,10 @@ mode):
 
 Continuous play continues until:
 
-- Player kills Sinistar (12 sinibomb hits against a fully-assembled
-  Sinistar; fewer only if body pieces were removed before full assembly)
-  → warp out → next sector loads → status page → next sector gameplay.
+- Player kills Sinistar (`tunables.yaml#pieces_required` sinibomb hits
+  against a fully-assembled Sinistar; fewer only if body pieces were
+  removed before full assembly) → warp out → next sector loads → status
+  page → next sector gameplay.
 - Player ship is destroyed:
   - If ships remaining > 0: explosion sequence (~2 seconds),
     invulnerability respawn near safe location, gameplay resumes.

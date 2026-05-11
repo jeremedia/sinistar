@@ -24,7 +24,7 @@ The original game runs at **60Hz** locked to the CRT vertical blanking interval 
 
 A modern remake should:
 
-- Use a **fixed-step simulation at 60Hz** for game logic (so AI, physics, and scoring are deterministic and frame-rate-independent).
+- Use a **fixed-step simulation at the canonical rate** (`tunables.yaml#tick_rate_hz`, 60Hz) for game logic (so AI, physics, and scoring are deterministic and frame-rate-independent).
 - Decouple rendering from simulation. Render at the display's native rate.
 - Interpolate visual positions between simulation ticks to avoid stutter on high-refresh displays.
 
@@ -36,7 +36,7 @@ A remake can **run all AI every frame**; modern hardware has the budget. However
 
 ### Tick units in this spec
 
-Throughout the spec:
+Throughout the spec (see `tunables.yaml#tick_rate_hz`):
 
 - "Frame" means one 60Hz simulation tick = ~16.67ms.
 - "Second" means 60 frames.
@@ -60,7 +60,7 @@ A remake's world model must satisfy:
 
 - 2D continuous space, no explicit map boundary
 - Sub-tick precision for slow entities
-- 60Hz fixed-step simulation
+- 60Hz fixed-step simulation (`tunables.yaml#tick_rate_hz`)
 - A scanner that displays entity positions compressed from world space
 - A camera that damps to follow the player
 - Off-screen entities continue simulating (with possibly reduced fidelity)

@@ -10,7 +10,8 @@ position += velocity * dt
 ```
 
 where `dt = 1/60 s` for the original and may be different for a remake's
-fixed-step rate (recommended: still 60Hz). Sub-pixel precision matters because
+fixed-step rate (recommended: match `tunables.yaml#tick_rate_hz`, 60Hz).
+Sub-pixel precision matters because
 slow entities (e.g., a worker drifting at fractional pixels per frame) would
 otherwise quantize to zero velocity.
 
@@ -97,6 +98,15 @@ below add Richter.
 
 **Pickups, hits, and special:**
 
+Numeric point values below are the authoritative spec for the listed
+events; the corresponding YAML rows are
+`scoring.yaml#collect_crystal` (player ↔ crystal),
+`scoring.yaml#kill_worker` (worker kills),
+`scoring.yaml#kill_warrior` (warrior kills),
+`scoring.yaml#kill_warrior_shot` (warrior-shot intercepts),
+`scoring.yaml#destroy_sinistar_piece` (sinibomb ↔ sinistar piece),
+and `tunables.yaml#stun_per_hit_frames` (sinistar stun on hit).
+
 | pair                                  | behavior                                       |
 |--------------------------------------- |------------------------------------------------|
 | player ↔ crystal                       | crystal consumed (+200 pts, +1 sinibomb to bay if not full; "CRYSTAL SAVED FOR WARP ENGINES" if full) |
@@ -107,9 +117,9 @@ below add Richter.
 | player_shot ↔ warrior_shot             | both consumed (+100 pts)                       |
 | player_shot ↔ planet                   | planet vibrates; shot consumed                 |
 | warrior_shot ↔ worker / worker_w_crystal | worker dies; shot consumed (no points to player) |
-| sinibomb ↔ sinistar                    | one body piece destroyed (+500 pts); planet vibrates; bomb consumed; Sinistar gains +2 stun frames |
-| sinibomb ↔ worker / worker_w_crystal   | worker dies (+150 pts); bomb consumed; "SINIBOMB INTERCEPTED" message |
-| sinibomb ↔ warrior                     | warrior dies (+500 pts); bomb consumed; "SINIBOMB INTERCEPTED" message |
+| sinibomb ↔ sinistar                    | one body piece destroyed (+500 pts); planet vibrates; bomb consumed; Sinistar stunned (see `tunables.yaml#stun_per_hit_frames`) |
+| sinibomb ↔ worker / worker_w_crystal   | worker dies (`scoring.yaml#kill_worker`, +150); bomb consumed; "SINIBOMB INTERCEPTED" message |
+| sinibomb ↔ warrior                     | warrior dies (`scoring.yaml#kill_warrior`, +500); bomb consumed; "SINIBOMB INTERCEPTED" message |
 | sinibomb ↔ planet                      | planet shattered; bomb consumed                |
 | sinibomb ↔ warrior_shot                | both consumed                                  |
 | crystal ↔ worker (caller-match only)   | if this crystal "called" this worker (OScWCr), crystal is given to worker; else PASS THROUGH |
@@ -169,9 +179,9 @@ The sinibomb is powerful for three other reasons:
 3. **On Sinistar contact**, it both destroys one body piece (+500 pts) and
    stuns Sinistar for `tunables.yaml#stun_per_hit_frames = 2` frames.
 
-Because the bay holds at most 20 sinibombs and each crystal grants only one,
-the crystal economy is the gate on sinibomb usage. No AOE is needed for the
-bomb to feel powerful.
+Because the bay holds at most `tunables.yaml#max_in_bay` (20) sinibombs and
+each crystal grants only one, the crystal economy is the gate on sinibomb
+usage. No AOE is needed for the bomb to feel powerful.
 
 ## Warp immunity
 
