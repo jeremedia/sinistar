@@ -115,7 +115,16 @@ See `04-player.md` for input, firing, and lives detail.
 
 **Visual identity:** Five distinct planetoid types varying in size and apparent mass. The original used different rock sprites; modern art is open. Larger types should *read* as heavier (slower to push, higher inertia in collisions).
 
-**Vibration mechanic:** Each planetoid has a vibration "Richter" value, capped at `tunables.yaml#vibration_max = 96`. Each missile impact adds `#missile_vibration_add = 16`. Vibration decays by `#vibration_damp_per_frame = 2`. Crystal-toss probability is *threshold-then-proportional*: tosses only happen when vibration exceeds `#crystal_toss_threshold = 16`, and the per-frame probability is `(vibration − threshold) / 256` (so ~0% just above threshold, ~31% at max vibration). After a successful toss, vibration is halved (`#crystal_toss_vibration_decay`). At max vibration, the planetoid shatters.
+**Vibration mechanic:** Each planetoid has a vibration "Richter" value, capped at `tunables.yaml#vibration_max = 96`. Vibration decays by `#vibration_damp_per_frame` per shake cycle.
+
+Vibration is *added* only by these collisions (`FALS/N1ALL.ASM:98-136` AddVib):
+
+- **player_shot or warrior_shot hits a planetoid** — `WITT/COLLISIO.ASM:330-333`
+- **planetoid bounces against Sinistar** — `WITT/COLLISIO.ASM:326-328`
+
+The increment is **mass-dependent**: lighter planetoids (type 3, mass 20) gain ~25 Richter per hit; heavier planetoids (type 5, mass 90) gain ~5. See `tunables.yaml#vibration_add_per_shot_intended` for the formula. Sinibombs do **not** add vibration to planetoids — `SBOMB × PLANET` kills the planetoid outright (`WITT/COLLISIO.ASM:337-349`). Ordinary bounces (worker/warrior/crystal/player vs. planetoid) do **not** add vibration either — they use `PreBou`/`PosBou` which only handle existing vibration velocity, not Richter.
+
+Crystal-toss is *threshold-then-proportional*: tosses only happen when vibration exceeds `#crystal_toss_threshold = 16`, and probability per shake cycle is `(vibration − threshold) / 256` (so ~0% just above threshold, ~31% at max vibration). After a successful toss, vibration is halved (`#crystal_toss_vibration_decay`). At max vibration, the planetoid shatters.
 
 ## Fragment / Particle
 

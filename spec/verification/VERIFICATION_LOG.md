@@ -421,6 +421,151 @@ Three patterns worth naming so the next reviewer can be fast:
    the actual TOSCRYS routine. The "All" suffix should have been a
    tell that this file aggregates the gameplay loops.
 
+## Fourth-pass corrections (second external review)
+
+A second external review caught regressions and finer-grained mechanical
+errors. All findings confirmed and fixed.
+
+### 26. Score-value `000` regression — **Corrected**
+
+**Spec said:** `entities.yaml#sinistar_piece.score_value: 000` and
+`#warrior.score_value: 000` (parsed as 0).
+
+**Truth:** both should be 500. Verified `WITT/COLLISIO.ASM:432` (warrior
+kill via player shot, `ldd #$500`) and `:375` (warrior kill via sinibomb,
+`ldd #$500`) and `:62` (Sinistar piece score in SUBPART, `ldd #$500`).
+Also `scoring.yaml` correctly says 500 — entities.yaml was the only file
+out of sync.
+
+**Cause:** when fixing the planetoid score (5 → 0) I used
+`replace_all: true` on `score_value: 5`, which mangled both `score_value:
+500` instances (sinistar_piece line 42, warrior line 82) into
+`score_value: 000`. Targeted replacement is the right tool here; bulk
+replacement on numeric values is dangerous.
+
+Fixed both back to 500.
+
+### 27. Planetoid bounce vibration claim — **Corrected** (load-bearing)
+
+**Spec said:** any object bouncing off a planetoid contributes Richter
+vibration via `PreBou` / `PosBou`. Implementers would have generated
+crystals from collisions that should not mine the rock.
+
+**Truth (`FALS/N1ALL.ASM:55-90`):** `PreBou` and `PosBou` only manipulate
+the vibration *velocity* (`OSLVib`/`OSSVib`) — they subtract it before a
+bounce so the bounce math operates on translation alone, then add it back
+after. Neither routine touches the Richter scale (`OSRcht`).
+
+The Richter scale is incremented only via the `AddVib` routine
+(`FALS/N1ALL.ASM:98`). `AddVib` is called from exactly three collision
+sites (`WITT/COLLISIO.ASM`):
+
+- Line 326-328: PLANET ↔ SINI bounce
+- Line 330-333: PLANET ↔ PlShot or PLANET ↔ WaShot
+
+That's it. Ordinary bounces between a planetoid and a worker, warrior,
+crystal, or player do **not** add Richter.
+
+The "Vib. Bounce" annotation in the original COLLISIO.ASM source (which
+I had read as "vibration-adding bounce") actually means "bounce that has
+to handle existing vibration via PreBou/PosBou" — not "bounce that adds
+vibration."
+
+Updated `03-physics-collision.md` collision matrix and `05-ai.md`
+planetoid loop pseudocode to reflect this. The rule is now: **only
+shots and Sinistar contact add Richter to a planetoid.**
+
+### 28. AddVib increment is mass-dependent, not flat — **Corrected**
+
+**Spec said:** `missile_vibration_add: 16` per shot (a flat constant).
+
+**Truth (`FALS/N1ALL.ASM:98-136`):** AddVib computes the increment from
+the *planet's* pseudo-mass (`OSPers`) via the `InvTbl` reciprocal-mass
+lookup, then right-shifted by 2:
+
+```
+B = planet_pseudo_mass / 16      ; clamped to >= 1
+increment = InvTbl[B] >> 2
+```
+
+With `InvTbl[N] ≈ 100/N`, this gives:
+
+| planet type | mass | increment |
+|-------------|------|-----------|
+| 3           | 20   | ~25       |
+| 1           | 60   | ~8        |
+| 2 / 4       | 50   | ~6        |
+| 5           | 90   | ~5        |
+
+Lighter planetoids vibrate more easily — a meaningful design choice that
+my flat-16 model would have erased.
+
+The constant `MisVib = 16` is defined in `FALS/N1SYM.ASM:16` but **never
+referenced anywhere else in the codebase**. It's a dead/legacy constant.
+The real value used by the running code is the InvTbl-based computation.
+
+Renamed `tunables.yaml#missile_vibration_add` to
+`#vibration_add_per_shot_intended` and documented the actual formula.
+
+### 29. Triggering paths for Richter add — **Clarified**
+
+**Spec said:** "missile/sinibomb impact" adds vibration to a planet.
+
+**Truth:** Only player_shot and warrior_shot impacts add vibration
+(`WITT/COLLISIO.ASM:330-333`). Sinibomb on a planetoid does not — it
+kills the planet outright (`COLLISIO.ASM:337-349` SBOMB,PLANET path,
+which calls `OKiVec` for both bomb and planet, no `AddVib`).
+
+Updated `02-entities.md` and `05-ai.md`.
+
+### 30. Vibrate ordering — **Corrected**
+
+**Spec said:** damp first, then roll for crystal toss.
+
+**Truth (`FALS/N1ALL.ASM:194-225`):** the `Vibrate` Task4 cycle has
+three stages with sleeps between them. At the end of stage 3:
+
+1. `TosCrys` — try to toss a crystal (line 211)
+2. `VibStp` — stop vibration motion (line 213)
+3. **Then** damp Richter by `VibDamp` (line 223-225)
+
+So toss check happens **before** damping. This matters because the
+toss probability is computed against the *pre-damp* vibration value.
+Updated `verification/planetoid_loop.py` and `05-ai.md` pseudocode.
+
+### 31. Stale MINE / crystal_toss_probability references — **Corrected**
+
+**Spec said:** in the worker decision tree at `05-ai.md:41`, mission
+transitions to `MINE` when close. The same chapter explicitly states
+workers have no MINE mission. And `:53` referenced the removed
+`crystal_toss_probability` constant by name.
+
+Both fixed. The worker decision tree now says `INTERCEPT(target) → TAIL
+once close`, and the crystal-toss reference now points to
+`crystal_toss_threshold`.
+
+The Warrior MINE state at line 95 is correct and remains — warriors
+*do* have a mine mission (`WITT/WARRIOR.ASM:113-117`); only workers
+don't.
+
+## Why these slipped past pass 3
+
+- **`replace_all: true` is a footgun** for substrings of larger numbers.
+  I should have used targeted edits with line numbers, or a sed-style
+  pattern that anchors the value (`^score_value: 5$`).
+- **The "Vib. Bounce" comment in COLLISIO.ASM misled me** into thinking
+  every planet collision added Richter. Following the call graph
+  (PreBou/PosBou actually do what?) was the right move and the reviewer
+  did exactly that.
+- **I extracted `MisVib = 16`** from the symbol file without confirming
+  it was actually referenced. Symbol-defined constants need to be checked
+  against `grep` to confirm they're live.
+- **Multi-pass narrative drift**: "MINE when close" survived earlier
+  edits because removing the worker MINE mission was done as a localized
+  table edit; the decision-tree pseudocode wasn't grep'd for the term.
+  This is the same class of regression as pass 3's review caught.
+
+
 ## What still needs verification
 
 These remain "needs_research" or "best-effort" in the YAML:
@@ -436,16 +581,17 @@ These remain "needs_research" or "best-effort" in the YAML:
   out of canon scope but contain unused-but-interesting design
   fragments. Not extracted.
 
-## Fourth-pass final consistency corrections
+## Fourth-pass final consistency corrections (reviewer follow-up)
 
-These corrections were made before using this spec as the faithful 2D
-mechanics reference for the VR adaptation workstream.
+Two additional regressions caught by the reviewer after the consolidated
+fourth pass above. These are the residual stale-prose findings that
+weren't visible from the YAML coverage check.
 
-### 26. Progression/game-flow stale 4-hit prose — **Corrected**
+### 32. Progression/game-flow stale "4 hits" prose — **Corrected**
 
 The second and third passes corrected Sinistar HP to **12 sinibomb hits**
-for a fully-assembled Sinistar, but two gameplay-flow prose references still
-said 4 hits:
+for a fully-assembled Sinistar in the YAML and most prose, but two
+gameplay-flow references still said 4 hits:
 
 - `06-progression.md` sector advance and pacing text.
 - `08-game-flow.md` gameplay termination bullet.
@@ -453,12 +599,13 @@ said 4 hits:
 Both now reference the source-backed `tunables.yaml#pieces_required = 12`
 body-piece counter and avoid reintroducing the old 4-hit prototype value.
 
-### 27. Entity score values for Sinistar pieces and warriors — **Corrected**
+Same class of regression as finding #26 (score_value 000) and finding #20
+(player_shot collects crystals prose): YAML was updated, narrative
+chapters were not grep'd for the same concepts. The coverage check
+confirms references resolve but doesn't catch wrong claims that don't
+cite YAML — those need a textual sweep.
 
-`data/entities.yaml` still listed `score_value: 000` for:
+### 33. score_value `000` regression — already covered in #26
 
-- `sinistar_piece`
-- `warrior`
-
-This contradicted `07-scoring.md`, `data/scoring.yaml`, and the verified
-`addscore` call sites recorded above. Both now use `score_value: 500`.
+(Duplicate of finding #26 above. Both surfaced the same regression.
+The reviewer's independent catch is recorded here for traceability.)

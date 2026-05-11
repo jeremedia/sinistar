@@ -262,11 +262,34 @@ tunables:
       description: Vibration decay per frame (VibDamp).
       source: FALS/N1SYM.ASM:VibDamp
 
-    - name: missile_vibration_add
+    - name: vibration_add_per_shot_intended
       value: 16
       unit: richter_units
-      description: Vibration added per sinibomb impact (MisVib).
-      source: FALS/N1SYM.ASM:MisVib
+      description: |
+        The MisVib constant in FALS/N1SYM.ASM (=16) is an intended/legacy
+        value but is NOT referenced by the actual AddVib path that fires on
+        shot impact. AddVib (FALS/N1ALL.ASM:98-136) computes the Richter
+        increment from the *planet's* pseudo-mass via the InvTbl reciprocal-
+        mass lookup, then >>2. Effective increment is therefore mass-
+        dependent (light planets vibrate more easily):
+
+          increment = (InvTbl[planet_mass / 16, clamped to 1] >> 2)
+
+        Approximate per-shot increments by planet type:
+          - Type 3 (mass 20): ~25 Richter/hit (lightest, vibrates easily)
+          - Types 1/4 (mass 50-60): ~6-8 Richter/hit
+          - Type 5 (mass 90): ~5 Richter/hit (heaviest, hardest to shake)
+
+      source: FALS/N1SYM.ASM:MisVib (defined unused), FALS/N1ALL.ASM:98-136 (AddVib actual)
+      confidence: high
+      note: |
+        Triggered ONLY by Planet,PlShot and Planet,WaShot collisions
+        (WITT/COLLISIO.ASM:330-333), and by Planet,SINI bounces
+        (COLLISIO.ASM:326-328). NOT by sinibomb impact: SBOMB,PLANET kills
+        the planet outright (COLLISIO.ASM:337-349), no vibration step.
+        NOT by ordinary planet bounces with workers/warriors/crystals/players:
+        those use PreBou/PosBou which only manage vibration *velocity*, not
+        Richter (FALS/N1ALL.ASM:59,77).
 
     - name: crystal_toss_threshold
       value: 16

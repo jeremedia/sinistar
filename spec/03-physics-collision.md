@@ -73,19 +73,26 @@ The pair behavior matrix below is verified against `WITT/COLLISIO.ASM`.
 
 **Bounces (mass-weighted elastic):**
 
+Note: `PreBou` / `PosBou` (`FALS/N1ALL.ASM:59,77`) wrap each bounce that
+involves a vibrating object. They subtract the vibration *velocity*
+(`OSLVib` / `OSSVib`) before the bounce calculation and add it back
+after, so the bounce math operates on translation only. They do **not**
+modify the Richter scale (`OSRcht`). Only the explicit `AddVib` paths
+below add Richter.
+
 | pair                                  | notes                                       |
 |--------------------------------------- |---------------------------------------------|
 | player ↔ worker / worker_w_crystal     | bounce; disabled during warp                |
 | player ↔ warrior                       | bounce; disabled during warp                |
-| player ↔ planetoid                     | bounce + planet vibrates (PreBou/PosBou)    |
+| player ↔ planetoid                     | bounce only (no Richter added)              |
 | player ↔ sinistar (assembling)         | bounce — Sinistar can't bite until ALIVE    |
 | crystal ↔ crystal / worker_w_crystal / warrior | bounce                            |
 | worker ↔ worker / worker_w_crystal / warrior  | bounce                             |
 | worker_w_crystal ↔ worker_w_crystal / warrior | bounce                             |
 | warrior ↔ warrior                      | bounce                                      |
-| planet ↔ crystal / worker / worker_w_crystal / warrior | bounce + planet vibrates    |
-| planet ↔ planet                        | bounce + both vibrate                       |
-| planet ↔ sinistar                      | bounce + planet may shatter                 |
+| planet ↔ crystal / worker / worker_w_crystal / warrior | bounce only (no Richter added) |
+| planet ↔ planet                        | bounce only (no Richter added either side)  |
+| planet ↔ sinistar                      | bounce + planet `AddVib` (can shatter planet) |
 | sinistar ↔ sinistar                    | bounce (rare; only in pathological states)  |
 
 **Pickups, hits, and special:**
